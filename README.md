@@ -1,2 +1,3 @@
 # pics.pierrebeaujean.net
-Sigal-based photo gallery
+
+Yet another gallery (generator).
