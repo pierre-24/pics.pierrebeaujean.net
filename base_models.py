@@ -19,12 +19,12 @@ class BaseSeeker:
 
 
 class FileSeeker:
-    def __init__(self, directory: pathlib.Path, extensions: List[str] = []):
+    def __init__(self, directory: pathlib.Path, extensions: Iterable[str] = ()):
         self.directory = directory
         self.extensions = extensions
 
     def __call__(self, *args, **kwargs):
-        r = re.compile('.*\.({})'.format('|'.join(self.extensions)))
+        r = re.compile(r'.*\.({})'.format('|'.join(self.extensions)))
         for fname in self.directory.glob('**/*.*'):
             if r.match(str(fname)):
                 yield BaseFile(fname)
@@ -42,7 +42,7 @@ class BaseFetcher:
     def __init__(
             self,
             seeker: BaseSeeker = BaseSeeker(),
-            transformers: Iterable[BaseTransformer] = []):
+            transformers: Iterable[BaseTransformer] = ()):
 
         self.seek = seeker
         self.transformers = transformers
@@ -55,20 +55,20 @@ class BaseFetcher:
 
 
 class Element:
-    def __init__(self, name: str, files: List[BaseFile] = [], description: str = ''):
+    def __init__(self, name: str, files: List[BaseFile] = (), description: str = ''):
         self.name = name
         self.description = description
-        self.files = files
+        self.files = list(files)
 
     def append(self, file_: BaseFile) -> None:
         self.files.append(file_)
 
 
 class Collection:
-    def __init__(self, name: str, elements: List[Element] = [], description: str = ''):
+    def __init__(self, name: str, elements: List[Element] = (), description: str = ''):
         self.name = name
         self.description = description
-        self.elements = elements
+        self.elements = list(elements)
 
     def append(self, element: Element) -> None:
         self.elements.append(element)
@@ -112,7 +112,7 @@ class AttributeClassifier(BaseClassifier):
 
 
 class BaseCollector:
-    def __init__(self, fetcher: BaseFetcher = BaseFetcher(), classifiers: Iterable[BaseClassifier] = []):
+    def __init__(self, fetcher: BaseFetcher = BaseFetcher(), classifiers: Iterable[BaseClassifier] = ()):
         self.fetch = fetcher
         self.classifiers = classifiers
 
@@ -146,7 +146,7 @@ class CollectionWriter(BaserWriter):
 
 
 class BasePipeline:
-    def __init__(self, collector: BaseCollector = BaseCollector(), writers: Iterable[BaserWriter] = []):
+    def __init__(self, collector: BaseCollector = BaseCollector(), writers: Iterable[BaserWriter] = ()):
         self.collect = collector
         self.writers = writers
 
