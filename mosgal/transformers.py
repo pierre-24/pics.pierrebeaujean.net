@@ -1,6 +1,5 @@
 from typing import Callable, Iterable
 import io
-import webcolors
 
 from PIL import ExifTags
 from colorthief import ColorThief
@@ -26,7 +25,7 @@ class TransformIf(BaseTransformer):
 
 
 class WithPIL(BaseTransformer):
-    """Make everything ensuring that the PIL object is opened in the begining (and closed in the end)
+    """Make everything ensuring that the PIL object is opened in the beginning (and closed in the end)
     """
     def __init__(self, transformers: Iterable[BaseTransformer] = ()):
         super().__init__()
@@ -174,7 +173,40 @@ class DominantColors(BaseTransformer):
 
     # TODO: a custom palette would do a better job here, I think
 
-    def __init__(self, color_count: int = 5, quality: int = 5, color_source: dict = webcolors.CSS21_HEX_TO_NAMES):
+    PALETTE_VIVID = {
+        # RGB pure
+        'red': (255, 0, 0),
+        'green': (0, 255, 0),
+        'blue': (0, 0, 255),
+        'black': (0, 0, 0),
+        # mixes
+        'yellow': (255, 255, 0),
+        'cyan': (0, 255, 255),
+        'pink': (255, 0, 255),
+        'white': (255, 255, 255),
+        # half-tones
+        'maroon': (128, 0, 0),
+        'darkgreen': (0, 128, 0),
+        'navy': (0, 0, 128),
+        # half-tones mixes
+        'teal': (0, 128, 128),
+        'olive': (128, 128, 0),
+        'purple': (128, 0, 128),
+        'gray': (128, 128, 128),
+        # extra grays
+        'darkgray': (75, 75, 75),
+        'lightgray': (192, 192, 192),
+        # extra colors:
+        'orange': (255, 128, 0),
+        'deeppink': (255, 0, 128),
+        'springgreen': (0, 255, 128),
+        'turquoise': (64, 224, 208),
+        'indigo': (75, 0, 130),
+        'brown': (210, 105, 30),
+        'deepblue': (70, 100, 180),
+    }
+
+    def __init__(self, color_count: int = 5, quality: int = 5, color_source: dict = PALETTE_VIVID):
         super().__init__()
 
         self.color_count = color_count
@@ -183,8 +215,8 @@ class DominantColors(BaseTransformer):
 
     def _find_closest(self, r: int, g: int, b: int) -> str:
         min_colours = {}
-        for key, name in self.color_source.items():
-            r_c, g_c, b_c = webcolors.hex_to_rgb(key)
+        for name, colour in self.color_source.items():
+            r_c, g_c, b_c = colour
             rd = (r_c - r) ** 2
             gd = (g_c - g) ** 2
             bd = (b_c - b) ** 2
