@@ -1,6 +1,5 @@
 from typing import Callable, Iterator, Iterable, List
 import pathlib
-import re
 
 
 class BaseFile:
@@ -16,18 +15,6 @@ class BaseSeeker:
 
     def __call__(self, *args, **kwargs) -> Iterator[BaseFile]:
         raise NotImplementedError()
-
-
-class FileSeeker:
-    def __init__(self, directory: pathlib.Path, extensions: Iterable[str] = ()):
-        self.directory = directory
-        self.extensions = extensions
-
-    def __call__(self, *args, **kwargs):
-        r = re.compile(r'.*\.({})'.format('|'.join(self.extensions)))
-        for fname in self.directory.glob('**/*.*'):
-            if r.match(str(fname)):
-                yield BaseFile(fname)
 
 
 class BaseTransformer:
