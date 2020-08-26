@@ -1,10 +1,10 @@
 from typing import Iterable
 
-from base_models import BaseFetcher, BaseSeeker, BaseTransformer, BaseClassifier, BaserWriter, BaseCollector, \
-    BasePipeline
+from mosgal.base_models import BaseFetcher, BaseSeeker, BaseTransformer, BaseClassifier, BaserWriter, BaseCollector, \
+    BasePublisher
 
 
-def make(
+def simple_pipeline(
         seek: BaseSeeker = BaseSeeker(),
         transformers: Iterable[BaseTransformer] = (),
         classifiers: Iterable[BaseClassifier] = (),
@@ -16,8 +16,8 @@ def make(
     # 2. Collect (classify)
     collect = BaseCollector(fetcher=fetch, classifiers=classifiers)
 
-    # 3. Pipeline (write)
-    pipeline = BasePipeline(collector=collect, writers=writers)
+    # 3. Publish (write)
+    publish = BasePublisher(collector=collect, writers=writers)
 
     # Go!
-    pipeline()
+    return publish

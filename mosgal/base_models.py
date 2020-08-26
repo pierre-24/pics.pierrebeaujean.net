@@ -1,8 +1,20 @@
+"""
+The idea behind this is simple:
+
+1) A "fetcher" find some files (through a "seeker") and apply a bunch of transformations on them
+   (which populates their attributes)
+2) Based on that, a "collector" get the files and apply a bunch of classifiers on them
+   (which sort the files into different "element" of a "collection")
+3) Based on that, a "publisher" get the collection and apply a bunch of writers on them
+   (which write stuffs based on that).
+"""
+
 from typing import Callable, Iterator, Iterable, List
 import pathlib
 
 
 class BaseFile:
+    """Represent a file, with a path and some attributes"""
     def __init__(self, source_path: pathlib.Path):
         self.source_path = source_path
         self.final_path = source_path
@@ -10,6 +22,8 @@ class BaseFile:
 
 
 class BaseSeeker:
+    """Seek for ``BaseFile``
+    """
     def __init__(self):
         pass
 
@@ -18,6 +32,8 @@ class BaseSeeker:
 
 
 class BaseTransformer:
+    """ "Transform" a ``BaseFile`` (modify its attributes)
+    """
     def __init__(self):
         pass
 
@@ -26,6 +42,8 @@ class BaseTransformer:
 
 
 class BaseFetcher:
+    """Fetch files trough a seeker, and apply a bunch of transformation to them
+    """
     def __init__(
             self,
             seeker: BaseSeeker = BaseSeeker(),
@@ -42,6 +60,8 @@ class BaseFetcher:
 
 
 class Element:
+    """Element of a ``Collection``, which contains files.
+    """
     def __init__(self, name: str, files: List[BaseFile] = (), description: str = ''):
         self.name = name
         self.description = description
@@ -52,6 +72,8 @@ class Element:
 
 
 class Collection:
+    """Collection of ``Element`` (probably based on a sorting criterion)
+    """
     def __init__(self, name: str, elements: List[Element] = (), description: str = ''):
         self.name = name
         self.description = description
@@ -62,6 +84,8 @@ class Collection:
 
 
 class BaseClassifier:
+    """Classify files into a ``Collection``.
+    """
     def __init__(self, name: str, description: str = ''):
         self.name = name
         self.description = description
@@ -71,6 +95,11 @@ class BaseClassifier:
 
 
 class AttributeClassifier(BaseClassifier):
+    """"
+    Classify files based on a given attribute
+    (all files with the same value for said attribute end up in the same ``Element``)
+    """
+
     def __init__(
             self,
             attribute: str,
@@ -99,6 +128,9 @@ class AttributeClassifier(BaseClassifier):
 
 
 class BaseCollector:
+    """Collect files (through fetcher) and apply a bunch of ``BaseClassifier`` on them.
+    """
+
     def __init__(self, fetcher: BaseFetcher = BaseFetcher(), classifiers: Iterable[BaseClassifier] = ()):
         self.fetch = fetcher
         self.classifiers = classifiers
@@ -111,6 +143,8 @@ class BaseCollector:
 
 
 class BaserWriter:
+    """Write stuffs, based on the different collections
+    """
     def __init__(self):
         pass
 
@@ -119,6 +153,8 @@ class BaserWriter:
 
 
 class CollectionWriter(BaserWriter):
+    """Write stuffs for a given collection (selected by its name)
+    """
     def __init__(self, collection_name):
         super().__init__()
         self.collection_name = collection_name
@@ -132,7 +168,10 @@ class CollectionWriter(BaserWriter):
                 self.write_collection(collection)
 
 
-class BasePipeline:
+class BasePublisher:
+    """Get collections (from collector) and apply a bunch of ``BaseWriter`` on them.
+    """
+
     def __init__(self, collector: BaseCollector = BaseCollector(), writers: Iterable[BaserWriter] = ()):
         self.collect = collector
         self.writers = writers
