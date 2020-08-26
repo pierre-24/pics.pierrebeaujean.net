@@ -206,12 +206,13 @@ class DominantColors(BaseTransformer):
         'deepblue': (70, 100, 180),
     }
 
-    def __init__(self, color_count: int = 5, quality: int = 5, color_source: dict = PALETTE_VIVID):
+    def __init__(self, color_count: int = 5, quality: int = 5, color_source: dict = PALETTE_VIVID, im_size=250):
         super().__init__()
 
         self.color_count = color_count
         self.quality = quality
         self.color_source = color_source
+        self.im_size = im_size
 
     def _find_closest(self, r: int, g: int, b: int) -> str:
         min_colours = {}
@@ -225,12 +226,17 @@ class DominantColors(BaseTransformer):
 
     def __call__(self, file: Image, *args, **kwargs) -> None:
 
-        im = file.pil_object.resize((150, 150))
+        sz = file.pil_object.size
+        ratio = sz[0] / sz[1]
+        sz_dim = (int(self.im_size * ratio), self.im_size) if ratio < 1 else (self.im_size, int(self.im_size/ratio))
+        print(sz_dim)
+
+        im = file.pil_object.resize(sz_dim)
         f = io.BytesIO()
-        im.save(f, 'PNG')
+        im.save(f, 'JPEG')
 
         palette = ColorThief(f).get_palette(
-            color_count=self.color_count + 3, quality=self.quality)[:self.color_count]
+            color_count=self.color_count, quality=self.quality)[:self.color_count]
 
         file.attributes['dominant_colors'] = list((c, self._find_closest(*c)) for c in palette)
         file.attributes['dominant_color_names'] = list(set(c[1] for c in file.attributes['dominant_colors']))
