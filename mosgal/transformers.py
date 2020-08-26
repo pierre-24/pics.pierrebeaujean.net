@@ -206,7 +206,7 @@ class DominantColors(BaseTransformer):
         'deepblue': (70, 100, 180),
     }
 
-    def __init__(self, color_count: int = 5, quality: int = 5, color_source: dict = PALETTE_VIVID, im_size=250):
+    def __init__(self, color_count: int = 10, quality: int = 10, color_source: dict = PALETTE_VIVID, im_size=150):
         super().__init__()
 
         self.color_count = color_count
@@ -229,7 +229,6 @@ class DominantColors(BaseTransformer):
         sz = file.pil_object.size
         ratio = sz[0] / sz[1]
         sz_dim = (int(self.im_size * ratio), self.im_size) if ratio < 1 else (self.im_size, int(self.im_size/ratio))
-        print(sz_dim)
 
         im = file.pil_object.resize(sz_dim)
         f = io.BytesIO()

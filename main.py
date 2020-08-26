@@ -22,7 +22,7 @@ if __name__ == '__main__':
         ),
         transformers=[
             WithPIL([
-                AddExifData(),
+                # AddExifData(),
                 Resize(750, 500, suffix='rs'),  # resized image (ratio=4:3)
                 Thumbnail(150, 150, suffix='th'),  # thumbnail image (ratio=1:1)
                 DominantColors()
