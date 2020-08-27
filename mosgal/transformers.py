@@ -221,7 +221,7 @@ class AddDominantColorsAttribute(BaseTransformer):
 
     # TODO: a custom palette would do a better job here, I think
 
-    PALETTE_VIVID = {
+    PALETTE = {
         # RGB pure
         'red': (255, 0, 0),
         'green': (0, 255, 0),
@@ -254,7 +254,7 @@ class AddDominantColorsAttribute(BaseTransformer):
         'deepblue': (70, 100, 180),
     }
 
-    def __init__(self, color_count: int = 10, quality: int = 10, color_source: dict = PALETTE_VIVID, im_size=150):
+    def __init__(self, color_count: int = 10, quality: int = 10, color_source: dict = PALETTE, im_size=150):
         super().__init__()
 
         self.color_count = color_count
@@ -306,14 +306,14 @@ class AddMonthYearAttribute:
     def __call__(self, file: Image, *args, **kwargs) -> None:
         if 'exif' in file.attributes:
             # DateTimeOriginal = 0x9003
-            date_taken = datetime.datetime.strptime(file.pil_object.getexif()[0x9003], '%Y:%m:%d %H:%M:%S').date()
+            date_taken = datetime.datetime.strptime(file.pil_object.getexif()[0x9003], '%Y:%m:%d %H:%M:%S')
             file.attributes['date_taken'] = date_taken
-            file.attributes['month_year'] = date_taken.strftime('%Y-%m')
+            file.attributes['month_year'] = date_taken.strftime('%B %Y')
 
 
 class AddOrientationAttribute:
     """
-    Add an ``orientation`` (portrait/landscape) attribute
+    Add an ``orientation`` (portrait/landscape) attribute, as well as ``ratio``.
     """
 
     def __call__(self, file: Image, *args, **kwargs) -> None:

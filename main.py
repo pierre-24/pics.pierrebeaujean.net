@@ -1,4 +1,3 @@
-from typing import Iterable
 import pathlib
 
 from mosgal.base_models import BaseTransformer, BaseFile, BaserWriter, Collection
@@ -6,6 +5,7 @@ from mosgal.seekers import ImageSeeker
 from mosgal.transformers import WithPIL, Resize, AddExifAttribute, ResizeMaxWidth, AddDominantColorsAttribute, \
     AddDirectoryNameAttribute, AddMonthYearAttribute, AddOrientationAttribute
 from mosgal.classifiers import AttributeClassifier
+from mosgal.writers import BuildDirectory, WriteIndex
 from mosgal.pipelines import simple_pipeline
 
 
@@ -23,16 +23,9 @@ class Logger(BaseTransformer):
                 print('  -', k, ':', v)
 
 
-class Wri(BaserWriter):
-    def __call__(self, collections: Iterable[Collection], *args, **kwargs) -> None:
-        for c in collections:
-            print(c.name)
-            for e in c.elements:
-                print('-', e.name, list(i.source_path for i in e.files))
-
-
 if __name__ == '__main__':
     pipeline = simple_pipeline(
+        pathlib.Path('./html'),
         seek=ImageSeeker(
             pathlib.Path('pictures'),
             extensions=['jpg', 'JPG', 'jpeg', 'JPEG'],
@@ -50,6 +43,7 @@ if __name__ == '__main__':
             ]),
             Logger(),
         ],
+        organizer=lambda l: sorted(l, key=lambda k: k.attributes['date_taken']),
         classifiers=[
             AttributeClassifier('parent_directory', name='Albums'),
             AttributeClassifier('month_year', name='Date'),
@@ -57,7 +51,9 @@ if __name__ == '__main__':
             AttributeClassifier('dominant_color_names', name='Colors', exclude=['lightgray', 'darkgray'])
         ],
         writers=[
-            Wri()
+            BuildDirectory(pathlib.Path('./_build'), writers=[
+                WriteIndex(),
+            ])
         ]
     )
 

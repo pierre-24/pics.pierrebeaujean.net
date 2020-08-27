@@ -9,7 +9,7 @@ The idea behind this is simple:
    (which write stuffs based on that).
 """
 
-from typing import Iterator, Iterable, List
+from typing import Iterator, Iterable, List, Callable
 import pathlib
 
 
@@ -98,12 +98,17 @@ class BaseCollector:
     """Collect files (through fetcher) and apply a bunch of ``BaseClassifier`` on them.
     """
 
-    def __init__(self, fetcher: BaseFetcher = BaseFetcher(), classifiers: Iterable[BaseClassifier] = ()):
+    def __init__(
+            self,
+            fetcher: BaseFetcher = BaseFetcher(),
+            classifiers: Iterable[BaseClassifier] = (),
+            organizer: Callable = lambda li: li):
         self.fetch = fetcher
         self.classifiers = classifiers
+        self.organize = organizer
 
     def __call__(self, *args, **kwargs) -> Iterator[Collection]:
-        files = list(self.fetch())
+        files = self.organize(self.fetch())
 
         for classify in self.classifiers:
             yield classify(files)
@@ -116,31 +121,21 @@ class BaserWriter:
     def __init__(self):
         pass
 
-    def __call__(self, collections: Iterable[Collection], *args, **kwargs) -> None:
+    def __call__(self, collections: Iterable[Collection], destination: pathlib.Path, *args, **kwargs) -> None:
         raise NotImplementedError()
-
-
-class CollectionWriter(BaserWriter):
-    """Write stuffs for a given collection (selected by its name)
-    """
-    def __init__(self, collection_name):
-        super().__init__()
-        self.collection_name = collection_name
-
-    def write_collection(self, collection: Collection):
-        raise NotImplementedError()
-
-    def __call__(self, collections: Iterable[Collection], *args, **kwargs) -> None:
-        for collection in collections:
-            if collection.name == self.collection_name:
-                self.write_collection(collection)
 
 
 class BasePublisher:
     """Get collections (from collector) and apply a bunch of ``BaseWriter`` on them.
     """
 
-    def __init__(self, collector: BaseCollector = BaseCollector(), writers: Iterable[BaserWriter] = ()):
+    def __init__(
+            self,
+            destination: pathlib.Path,
+            collector: BaseCollector = BaseCollector(),
+            writers: Iterable[BaserWriter] = ()):
+
+        self.destination = destination
         self.collect = collector
         self.writers = writers
 
@@ -148,5 +143,5 @@ class BasePublisher:
         collections = list(self.collect())
 
         for write in self.writers:
-            write(collections)
+            write(collections, self.destination)
 

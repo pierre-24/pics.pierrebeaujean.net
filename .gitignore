@@ -130,5 +130,5 @@ dmypy.json
 
 # custom
 pictures/
-build/
 html/
+_build/
