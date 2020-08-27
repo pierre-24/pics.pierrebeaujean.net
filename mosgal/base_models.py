@@ -9,7 +9,7 @@ The idea behind this is simple:
    (which write stuffs based on that).
 """
 
-from typing import Callable, Iterator, Iterable, List
+from typing import Iterator, Iterable, List
 import pathlib
 
 
@@ -94,39 +94,6 @@ class BaseClassifier:
         raise NotImplementedError()
 
 
-class AttributeClassifier(BaseClassifier):
-    """"
-    Classify files based on a given attribute
-    (all files with the same value for said attribute end up in the same ``Element``)
-    """
-
-    def __init__(
-            self,
-            attribute: str,
-            name: str = None,
-            description: str = '',
-            get_element_name: Callable = lambda n: n,
-            get_element_description: Callable = lambda n: ''):
-        super().__init__(name=name if name is not None else attribute, description=description)
-
-        self.attribute = attribute
-        self.get_element_name = get_element_name
-        self.get_element_description = get_element_description
-
-    def __call__(self, files: List[BaseFile], *args, **kwargs) -> Collection:
-        elements = {}
-
-        for f in files:
-            value = f.attributes.get(self.attribute, None)
-            if value not in elements:
-                elements[value] = Element(
-                    self.get_element_name(value), description=self.get_element_description(value))
-
-            elements[value].append(f)
-
-        return Collection(self.name, description=self.description, elements=list(elements.values()))
-
-
 class BaseCollector:
     """Collect files (through fetcher) and apply a bunch of ``BaseClassifier`` on them.
     """
@@ -145,6 +112,7 @@ class BaseCollector:
 class BaserWriter:
     """Write stuffs, based on the different collections
     """
+
     def __init__(self):
         pass
 
