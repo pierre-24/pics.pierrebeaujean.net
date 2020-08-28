@@ -1,11 +1,11 @@
 import pathlib
 
 from mosgal.base_models import BaseTransformer, BaseFile
-from mosgal.seekers import ImageSeeker
-from mosgal.transformers import WithPIL, Resize, AddExifAttribute, ResizeMaxWidth, AddDominantColorsAttribute, \
+from mosgal.seekers import ImageSeeker, Image
+from mosgal.transformers import WithPIL, Resize, AddExifAttributes, ResizeMaxWidth, AddDominantColorsAttribute, \
     AddDirectoryNameAttribute, AddMonthYearAttribute, AddOrientationAttribute, TransformIf
 from mosgal.classifiers import AttributeClassifier
-from mosgal.writers import BuildDirectory, WriteIndex
+from mosgal.writers import BuildDirectory, WriteIndex, WriteImages
 from mosgal.pipelines import simple_pipeline
 
 from mosgal.ext.database import ImageDB, AddToImageDB, UpdateFromImageDB, WriteImageDB
@@ -25,6 +25,22 @@ class Logger(BaseTransformer):
                 print('  -', k, ':', v)
 
 
+indices = {}
+
+
+def name_final(image: Image, attribute: str):
+    type_ = attribute.split('_')[-1]
+    parent_directory = image.attributes['parent_directory']
+
+    index = parent_directory + '_' + type_
+    if index not in indices:
+        indices[index] = 0
+
+    indices[index] += 1
+
+    return '{}_{}_{}.JPG'.format(parent_directory, indices[index], type_)
+
+
 if __name__ == '__main__':
 
     db = ImageDB()
@@ -35,7 +51,7 @@ if __name__ == '__main__':
             db.load(f)
 
     pipeline = simple_pipeline(
-        pathlib.Path('./html'),
+        destination=pathlib.Path('./html'),
         seek=ImageSeeker(
             pathlib.Path('pictures'),
             extensions=['jpg', 'JPG', 'jpeg', 'JPEG'],
@@ -48,7 +64,7 @@ if __name__ == '__main__':
                     WithPIL([
                         Resize(750, 500, suffix='rs'),  # resized image (ratio=4:3)
                         ResizeMaxWidth(300, suffix='th'),  # thumbnail (width=300px)
-                        AddExifAttribute(),
+                        AddExifAttributes(),
                         AddDominantColorsAttribute(),
                         AddDirectoryNameAttribute(),
                         AddMonthYearAttribute(),
@@ -65,12 +81,18 @@ if __name__ == '__main__':
         organizer=lambda l: sorted(l, key=lambda k: k.attributes['date_taken']),
         classifiers=[
             AttributeClassifier('parent_directory', name='Albums'),
-            AttributeClassifier('month_year', name='Date'),
+            AttributeClassifier('month_year', name='Dates'),
             AttributeClassifier('dominant_color_names', name='Colors', exclude=['lightgray', 'darkgray'])
         ],
         writers=[
             BuildDirectory(pathlib.Path('./_build'), writers=[
-                WriteIndex(),
+                WriteImages(
+                    pathlib.Path('images/'),
+                    'Albums',
+                    ['resized_th', 'resized_rs'],
+                    name_final
+                ),
+                WriteIndex(['Albums', 'Dates'], 'resized_rs_final', sorting_criterion='date_taken'),
                 WriteImageDB(db, db_path),
             ])
         ]

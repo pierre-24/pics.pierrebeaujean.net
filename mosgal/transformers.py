@@ -202,7 +202,7 @@ class Thumbnail(BaseTransformer):
         file.attributes['thumbnail_' + self.suffix] = str(path)
 
 
-class AddExifAttribute:
+class AddExifAttributes:
     """Add some EXIF data to attributes
     """
 
