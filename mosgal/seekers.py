@@ -1,5 +1,5 @@
 import pathlib
-from typing import Iterable
+from typing import Iterable, Union
 from PIL import Image as PILImage
 import re
 
@@ -10,13 +10,13 @@ class Image(BaseFile):
     """Extension of ``File`` to handle PIL object.
     """
 
-    def __init__(self, source_path: pathlib.Path):
-        super().__init__(source_path)
+    def __init__(self, source: Union[pathlib.Path, str], path: pathlib.Path):
+        super().__init__(source, path)
         self.pil_object = None
 
     def open_PIL(self) -> None:
         """Open the PIL object"""
-        self.pil_object = PILImage.open(self.final_path)
+        self.pil_object = PILImage.open(self.path)
 
     def close_PIL(self) -> None:
         """Close the PIL object"""
@@ -51,4 +51,5 @@ class ImageSeeker:
                 continue
 
             if r.match(sfname):
-                yield Image(fname)
+                im = Image(sfname, fname)
+                yield im

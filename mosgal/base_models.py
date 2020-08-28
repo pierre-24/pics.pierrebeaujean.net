@@ -14,10 +14,16 @@ import pathlib
 
 
 class BaseFile:
-    """Represent a file, with a path and some attributes"""
-    def __init__(self, source_path: pathlib.Path):
-        self.source_path = source_path
-        self.final_path = source_path
+    """
+    Represent a file, with a path and some attributes
+
+    Note that ``source`` is a free format string,
+    while ``path`` should correspond to the actual location of the file (in the local filesystem).
+    """
+
+    def __init__(self, source: str, path: pathlib.Path):
+        self.source = source
+        self.path = path
         self.attributes = {}
 
 

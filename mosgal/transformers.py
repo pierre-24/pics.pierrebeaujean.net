@@ -3,6 +3,7 @@ import io
 import datetime
 
 from PIL import ExifTags
+from PIL.TiffImagePlugin import IFDRational
 from colorthief import ColorThief
 
 from mosgal.base_models import BaseTransformer, BaseFile
@@ -73,7 +74,7 @@ class Resize(BaseTransformer):
         is_portrait = size[0] > size[1]
 
         if (is_portrait and size[0] <= self.max_width) or (not is_portrait and size[1] <= self.max_height):
-            file.resized_path = file.final_path
+            file.resized_path = file.path
 
         else:
             if is_portrait:
@@ -85,14 +86,14 @@ class Resize(BaseTransformer):
                 new_size = new_size[1], new_size[0]
 
             i = file.pil_object.resize(new_size)
-            path = file.final_path.with_suffix('.{}.JPG'.format(self.suffix))
+            path = file.path.with_suffix('.{}.JPG'.format(self.suffix))
 
             i.save(
                 path, 'JPEG',
                 **self.encoder_options,
                 exif=file.pil_object.info['exif'] if self.keep_exif else b'')
 
-            file.attributes['resized_' + self.suffix] = path
+            file.attributes['resized_' + self.suffix] = str(path)
 
 
 class ResizeMaxWidth(BaseTransformer):
@@ -123,7 +124,7 @@ class ResizeMaxWidth(BaseTransformer):
             size = size[1], size[0]
 
         if size[0] <= self.max_width:
-            file.resized_path = file.final_path
+            file.resized_path = file.path
 
         else:
             new_size = self.max_width, int(size[1] / size[0] * self.max_width)
@@ -132,14 +133,14 @@ class ResizeMaxWidth(BaseTransformer):
                 new_size = new_size[1], new_size[0]
 
             i = file.pil_object.resize(new_size)
-            path = file.final_path.with_suffix('.{}.JPG'.format(self.suffix))
+            path = file.path.with_suffix('.{}.JPG'.format(self.suffix))
 
             i.save(
                 path, 'JPEG',
                 **self.encoder_options,
                 exif=file.pil_object.info['exif'] if self.keep_exif else b'')
 
-            file.attributes['resized_' + self.suffix] = path
+            file.attributes['resized_' + self.suffix] = str(path)
 
 
 class Thumbnail(BaseTransformer):
@@ -195,22 +196,31 @@ class Thumbnail(BaseTransformer):
         image = image.crop(crop)
 
         # save
-        path = file.final_path.with_suffix('.{}.JPG'.format(self.suffix))
+        path = file.path.with_suffix('.{}.JPG'.format(self.suffix))
 
         image.save(path, 'JPEG', **self.encoder_options)
-        file.attributes['thumbnail_' + self.suffix] = path
+        file.attributes['thumbnail_' + self.suffix] = str(path)
 
 
 class AddExifAttribute:
-    """Add EXIF data (as ``exif``) to attributes
+    """Add some EXIF data to attributes
     """
 
+    EXIF_TAGS = [
+        'ExposureTime', 'FNumber', 'Make', 'Model', 'ISOSpeedRatings', 'FocalLength'
+    ]
+
+    def __init__(self, which: Iterable[str] = EXIF_TAGS):
+        self.which = which
+
     def __call__(self, file: Image, *args, **kwargs) -> None:
-        file.attributes['exif'] = {
-            ExifTags.TAGS[k]: v
+        data = {
+            ExifTags.TAGS[k]: float(v) if type(v) is IFDRational else v
             for k, v in file.pil_object.getexif().items()
-            if k in ExifTags.TAGS
+            if k in ExifTags.TAGS and ExifTags.TAGS[k] in self.which
         }
+
+        file.attributes.update(**data)
 
 
 class AddDominantColorsAttribute(BaseTransformer):
@@ -285,8 +295,9 @@ class AddDominantColorsAttribute(BaseTransformer):
         palette = ColorThief(f).get_palette(
             color_count=self.color_count, quality=self.quality)[:self.color_count]
 
-        file.attributes['dominant_colors'] = list((c, self._find_closest(*c)) for c in palette)
-        file.attributes['dominant_color_names'] = list(set(c[1] for c in file.attributes['dominant_colors']))
+        dominants = list((c, self._find_closest(*c)) for c in palette)
+        file.attributes['dominant_color_names'] = list(set(c[1] for c in dominants))
+        file.attributes['dominant_colors'] = ['#{:02X}{:02X}{:02X}'.format(*c[0]) for c in dominants]
 
 
 class AddDirectoryNameAttribute:
@@ -294,7 +305,7 @@ class AddDirectoryNameAttribute:
     """
 
     def __call__(self, file: Image, *args, **kwargs) -> None:
-        file.attributes['parent_directory'] = file.final_path.parts[-2]
+        file.attributes['parent_directory'] = file.path.parts[-2]
 
 
 class AddMonthYearAttribute:
@@ -304,11 +315,9 @@ class AddMonthYearAttribute:
     """
 
     def __call__(self, file: Image, *args, **kwargs) -> None:
-        if 'exif' in file.attributes:
-            # DateTimeOriginal = 0x9003
-            date_taken = datetime.datetime.strptime(file.pil_object.getexif()[0x9003], '%Y:%m:%d %H:%M:%S')
-            file.attributes['date_taken'] = date_taken
-            file.attributes['month_year'] = date_taken.strftime('%B %Y')
+        dt = file.pil_object.getexif()[0x9003]
+        file.attributes['date_taken'] = dt
+        file.attributes['month_year'] = datetime.datetime.strptime(dt, '%Y:%m:%d %H:%M:%S').strftime('%B %Y')
 
 
 class AddOrientationAttribute:

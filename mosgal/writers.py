@@ -22,6 +22,8 @@ class TemplateMixin:
 
 
 class BuildDirectory(BaserWriter):
+    """Create a directory for building everything (remove if exists), then move everything into ``destination``
+    """
 
     def __init__(self, build: pathlib.Path, writers: Iterable[BaserWriter] = ()):
         super().__init__()
@@ -48,6 +50,8 @@ class BuildDirectory(BaserWriter):
 
 
 class WriteTemplate(TemplateMixin, BaserWriter):
+    """Write a template into ``destination``
+    """
 
     def __init__(self, template_name, destination_file: pathlib.Path()):
         super().__init__(template_name)
