@@ -326,7 +326,17 @@ class AddOrientationAttribute:
     """
 
     def __call__(self, file: Image, *args, **kwargs) -> None:
-        is_portrait = file.pil_object._getexif()[0x0112] in [3, 6, 8]
+        is_portrait = file.pil_object.getexif()[0x0112] in [3, 6, 8]
         sz = file.pil_object.size
         file.attributes['orientation'] = 'landscape' if not is_portrait else 'portrait'
         file.attributes['ratio'] = sz[0] / sz[1] if not is_portrait else sz[1] / sz[0]
+
+
+class AddFocalClassAttribute:
+    """Add a ``focal_class`` attribute, that cast the (35mm film equivalent) focal length into a
+    "large" (< 40), "normal" (40-100) or "zoom" (> 100) class.
+    """
+
+    def __call__(self, file: Image, *args, **kwargs) -> None:
+        f_length = file.pil_object.getexif()[0xA405]
+        file.attributes['focal_class'] = 'large' if f_length < 40 else 'normal' if f_length < 100 else 'zoom'

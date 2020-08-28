@@ -3,7 +3,8 @@ import pathlib
 from mosgal.base_models import BaseTransformer, BaseFile
 from mosgal.seekers import ImageSeeker, Image
 from mosgal.transformers import WithPIL, Resize, AddExifAttributes, ResizeMaxWidth, AddDominantColorsAttribute, \
-    AddDirectoryNameAttribute, AddMonthYearAttribute, AddOrientationAttribute, TransformIf
+    AddDirectoryNameAttribute, AddMonthYearAttribute, AddOrientationAttribute, TransformIf, Thumbnail, \
+    AddFocalClassAttribute
 from mosgal.classifiers import AttributeClassifier
 from mosgal.writers import BuildDirectory, WriteIndex, WriteImages
 from mosgal.pipelines import simple_pipeline
@@ -55,7 +56,7 @@ if __name__ == '__main__':
         seek=ImageSeeker(
             pathlib.Path('pictures'),
             extensions=['jpg', 'JPG', 'jpeg', 'JPEG'],
-            exclude=['.rs.JPG', '.th.JPG'],
+            exclude=['.rs.JPG', '.lth.JPG', '.th.JPG'],
         ),
         transformers=[
             TransformIf(
@@ -63,12 +64,13 @@ if __name__ == '__main__':
                 if_false=[
                     WithPIL([
                         Resize(750, 500, suffix='rs'),  # resized image (ratio=4:3)
-                        ResizeMaxWidth(300, suffix='th'),  # thumbnail (width=300px)
+                        ResizeMaxWidth(300, suffix='lth'),  # thumbnail (width=300px)
+                        Thumbnail(300, 3*75, suffix='th'),  # thumbnail (width=300px)
                         AddExifAttributes(),
                         AddDominantColorsAttribute(),
                         AddDirectoryNameAttribute(),
                         AddMonthYearAttribute(),
-                        AddOrientationAttribute(),
+                        AddFocalClassAttribute(),
                         AddToImageDB(db),
                     ])
                 ],
@@ -82,6 +84,7 @@ if __name__ == '__main__':
         classifiers=[
             AttributeClassifier('parent_directory', name='Albums'),
             AttributeClassifier('month_year', name='Dates'),
+            AttributeClassifier('focal_class', 'Focals'),
             AttributeClassifier('dominant_color_names', name='Colors', exclude=['lightgray', 'darkgray'])
         ],
         writers=[
@@ -89,10 +92,10 @@ if __name__ == '__main__':
                 WriteImages(
                     pathlib.Path('images/'),
                     'Albums',
-                    ['resized_th', 'resized_rs'],
+                    ['resized_lth', 'thumbnail_th', 'resized_rs'],
                     name_final
                 ),
-                WriteIndex(['Albums', 'Dates'], 'resized_rs_final', sorting_criterion='date_taken'),
+                WriteIndex(['Albums', 'Dates'], 'thumbnail_th_final', sorting_criterion='date_taken'),
                 WriteImageDB(db, db_path),
             ])
         ]
