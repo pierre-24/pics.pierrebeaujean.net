@@ -68,10 +68,11 @@ class BaseFetcher:
 class Element:
     """Element of a ``Collection``, which contains files.
     """
-    def __init__(self, name: str, files: List[BaseFile] = (), description: str = ''):
+    def __init__(self, name: str, files: List[BaseFile] = (), description: str = '', target: str = ''):
         self.name = name
         self.description = description
         self.files = list(files)
+        self.target = target
 
     def append(self, file_: BaseFile) -> None:
         self.files.append(file_)
@@ -80,10 +81,11 @@ class Element:
 class Collection:
     """Collection of ``Element`` (probably based on a sorting criterion)
     """
-    def __init__(self, name: str, elements: List[Element] = (), description: str = ''):
+    def __init__(self, name: str, elements: List[Element] = (), description: str = '', target: str = ''):
         self.name = name
         self.description = description
         self.elements = list(elements)
+        self.target = target
 
     def append(self, element: Element) -> None:
         self.elements.append(element)
@@ -92,9 +94,10 @@ class Collection:
 class BaseClassifier:
     """Classify files into a ``Collection``.
     """
-    def __init__(self, name: str, description: str = ''):
+    def __init__(self, name: str, description: str = '', target: str = ''):
         self.name = name
         self.description = description
+        self.target = target
 
     def __call__(self, files: List[BaseFile], *args, **kwargs) -> Collection:
         raise NotImplementedError()

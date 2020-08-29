@@ -67,10 +67,15 @@ class WriteTemplate(TemplateMixin, BaserWriter):
 
 
 class WriteIndex(WriteTemplate):
-    def __init__(self, collections: Iterable[str], picture_attribute: str, sorting_criterion: str = None):
+    def __init__(
+            self,
+            collections: Iterable[str],
+            thumbnail_attribute: str,
+            sorting_criterion: str = None
+    ):
         super().__init__('index.html', 'index.html')
         self.collections = collections
-        self.picture_attribute = picture_attribute
+        self.element_thumbnail_attribute = thumbnail_attribute
         self.sorting_criterion = sorting_criterion
 
     def get_context_data(self, collections: Iterable[Collection], *args, **kwargs):
@@ -85,8 +90,8 @@ class WriteIndex(WriteTemplate):
             for el in current_collection.elements:
                 info = {
                     'name': el.name,
-                    'description': el.description,
-                    'picture': el.files[-1].attributes[self.picture_attribute]
+                    'link': '{}{}'.format(current_collection.target, el.target),
+                    'picture': el.files[-1].attributes[self.element_thumbnail_attribute]
                 }
                 if self.sorting_criterion is not None:
                     info.update({self.sorting_criterion: el.files[-1].attributes[self.sorting_criterion]})

@@ -1,5 +1,7 @@
 {% extends "base.ext.html" %}
 
+{% block page_title %}Index{% endblock %}
+
 {% block page_content %}
     {% for collection in featured_collections %}
         <h2>{{ collection }}</h2>
@@ -7,9 +9,9 @@
         {% for element in featured_collections[collection]|reverse %}
             <div class="col mb-4">
                 <div class="card">
-                  <img src="{{ element.picture }}" class="card-img-top" alt="{{ element.name }}">
+                    <a href="{{ element.link }}"><img src="{{ element.picture }}" class="card-img-top" alt="{{ element.name }}"></a>
                   <div class="card-body">
-                    <h5 class="card-title">{{ element.name }}</h5>
+                      <h5 class="card-title"><a href="{{ element.link }}">{{ element.name }}</a></h5>
                   </div>
                 </div>
               </div>

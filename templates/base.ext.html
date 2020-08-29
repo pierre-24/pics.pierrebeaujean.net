@@ -26,7 +26,7 @@
                     </a>
                     <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
                         {%  for element in collection.elements|reverse %}
-                            <a class="dropdown-item" href="#">{{ element.name }}</a>
+                            <a class="dropdown-item" href="{{ collection.target }}{{ element.target }}">{{ element.name }}</a>
                         {% endfor %}
                     </div>
                 </li>

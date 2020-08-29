@@ -1,6 +1,8 @@
 import pathlib
 
-from mosgal.base_models import BaseTransformer, BaseFile
+from slugify import slugify
+
+from mosgal.base_models import BaseTransformer, BaseFile, Collection, Element
 from mosgal.seekers import ImageSeeker, Image
 from mosgal.transformers import WithPIL, Resize, AddExifAttributes, ResizeMaxWidth, AddDominantColorsAttribute, \
     AddDirectoryNameAttribute, AddMonthYearAttribute, AddOrientationAttribute, TransformIf, Thumbnail, \
@@ -29,7 +31,7 @@ class Logger(BaseTransformer):
 indices = {}
 
 
-def name_final(image: Image, attribute: str):
+def image_name(image: Image, attribute: str) -> str:
     type_ = attribute.split('_')[-1]
     parent_directory = image.attributes['parent_directory']
 
@@ -40,6 +42,10 @@ def name_final(image: Image, attribute: str):
     indices[index] += 1
 
     return '{}_{}_{}.JPG'.format(parent_directory, indices[index], type_)
+
+
+def element_target(name: str) -> str:
+    return '/{}.html'.format(slugify(name))
 
 
 if __name__ == '__main__':
@@ -82,10 +88,16 @@ if __name__ == '__main__':
         ],
         organizer=lambda l: sorted(l, key=lambda k: k.attributes['date_taken']),
         classifiers=[
-            AttributeClassifier('parent_directory', name='Albums'),
-            AttributeClassifier('month_year', name='Dates'),
-            AttributeClassifier('focal_class', 'Focals'),
-            AttributeClassifier('dominant_color_names', name='Colors', exclude=['lightgray', 'darkgray'])
+            AttributeClassifier('parent_directory', name='Albums', target='albums', get_element_target=element_target),
+            AttributeClassifier('month_year', name='Dates', target='dates', get_element_target=element_target),
+            AttributeClassifier('focal_class', 'Focals', target='focals', get_element_target=element_target),
+            AttributeClassifier(
+                'dominant_color_names',
+                name='Colors',
+                exclude=['lightgray', 'darkgray'],
+                target='colors',
+                get_element_target=element_target
+            )
         ],
         writers=[
             BuildDirectory(pathlib.Path('./_build'), writers=[
@@ -93,7 +105,7 @@ if __name__ == '__main__':
                     pathlib.Path('images/'),
                     'Albums',
                     ['resized_lth', 'thumbnail_th', 'resized_rs'],
-                    name_final
+                    image_name
                 ),
                 WriteIndex(['Albums', 'Dates'], 'thumbnail_th_final', sorting_criterion='date_taken'),
                 WriteImageDB(db, db_path),
