@@ -2,13 +2,12 @@ import pathlib
 
 from slugify import slugify
 
-from mosgal.base_models import BaseTransformer, BaseFile, Collection, Element
+from mosgal.base_models import BaseTransformer, BaseFile
 from mosgal.seekers import ImageSeeker, Image
 from mosgal.transformers import WithPIL, Resize, AddExifAttributes, ResizeMaxWidth, AddDominantColorsAttribute, \
-    AddDirectoryNameAttribute, AddMonthYearAttribute, AddOrientationAttribute, TransformIf, Thumbnail, \
-    AddFocalClassAttribute
+    AddDirectoryNameAttribute, AddMonthYearAttribute, TransformIf, Thumbnail, AddFocalClassAttribute
 from mosgal.classifiers import AttributeClassifier
-from mosgal.writers import BuildDirectory, WriteIndex, WriteImages
+from mosgal.writers import BuildDirectory, WriteIndex, WriteImages, WriteCollections, WriteExtraFiles
 from mosgal.pipelines import simple_pipeline
 
 from mosgal.ext.database import ImageDB, AddToImageDB, UpdateFromImageDB, WriteImageDB
@@ -45,7 +44,7 @@ def image_name(image: Image, attribute: str) -> str:
 
 
 def element_target(name: str) -> str:
-    return '/{}.html'.format(slugify(name))
+    return '__{}.html'.format(slugify(name))
 
 
 if __name__ == '__main__':
@@ -88,9 +87,9 @@ if __name__ == '__main__':
         ],
         organizer=lambda l: sorted(l, key=lambda k: k.attributes['date_taken']),
         classifiers=[
-            AttributeClassifier('parent_directory', name='Albums', target='albums', get_element_target=element_target),
-            AttributeClassifier('month_year', name='Dates', target='dates', get_element_target=element_target),
-            AttributeClassifier('focal_class', 'Focals', target='focals', get_element_target=element_target),
+            AttributeClassifier('parent_directory', name='Album', target='album', get_element_target=element_target),
+            AttributeClassifier('month_year', name='Date', target='date', get_element_target=element_target),
+            AttributeClassifier('focal_class', 'Focal', target='focal', get_element_target=element_target),
             AttributeClassifier(
                 'dominant_color_names',
                 name='Colors',
@@ -103,11 +102,13 @@ if __name__ == '__main__':
             BuildDirectory(pathlib.Path('./_build'), writers=[
                 WriteImages(
                     pathlib.Path('images/'),
-                    'Albums',
+                    'Album',
                     ['resized_lth', 'thumbnail_th', 'resized_rs'],
                     image_name
                 ),
-                WriteIndex(['Albums', 'Dates'], 'thumbnail_th_final', sorting_criterion='date_taken'),
+                WriteIndex(['Album', 'Date'], 'thumbnail_th_final', sorting_criterion='date_taken'),
+                WriteCollections(),
+                WriteExtraFiles([pathlib.Path('./templates/style.css')]),
                 WriteImageDB(db, db_path),
             ])
         ]

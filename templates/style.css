@@ -1,0 +1,25 @@
+.card-columns {
+  column-count: 2;
+}
+
+@media (min-width: 576px) {
+  .card-columns {
+    column-count: 3;
+  }
+}
+
+@media (min-width: 992px) {
+  .card-columns {
+    column-count: 4;
+  }
+}
+
+.card-overlay h5 {
+    position: absolute; bottom: 0; padding: 1rem; margin: 0; width: 100%;
+    color: #ccc; font-size: 1rem; font-weight: bold; text-align: center;
+    background-color: rgba(0,0,0,0.5)
+}
+
+.card:hover .card-overlay h5 {
+    color: white; bottom: unset; top: 50%; transform: translateY(-50%); height: 100%; padding-top: 33%;
+}

@@ -220,6 +220,13 @@ class AddExifAttributes:
             if k in ExifTags.TAGS and ExifTags.TAGS[k] in self.which
         }
 
+        exposure = '{:n}s'.format(
+            data['ExposureTime']) if data['ExposureTime'] > 1 else '1/{:n}s'.format(1 / data['ExposureTime'])
+
+        data['characteristics'] = '{} @ {}nm, ISO {}, {}, f/{}'.format(
+            data['Model'], data['FocalLength'], data['ISOSpeedRatings'], exposure, data['FNumber']
+        )
+
         file.attributes.update(**data)
 
 
@@ -318,18 +325,6 @@ class AddMonthYearAttribute:
         dt = file.pil_object.getexif()[0x9003]
         file.attributes['date_taken'] = dt
         file.attributes['month_year'] = datetime.datetime.strptime(dt, '%Y:%m:%d %H:%M:%S').strftime('%B %Y')
-
-
-class AddOrientationAttribute:
-    """
-    Add an ``orientation`` (portrait/landscape) attribute, as well as ``ratio``.
-    """
-
-    def __call__(self, file: Image, *args, **kwargs) -> None:
-        is_portrait = file.pil_object.getexif()[0x0112] in [3, 6, 8]
-        sz = file.pil_object.size
-        file.attributes['orientation'] = 'landscape' if not is_portrait else 'portrait'
-        file.attributes['ratio'] = sz[0] / sz[1] if not is_portrait else sz[1] / sz[0]
 
 
 class AddFocalClassAttribute:

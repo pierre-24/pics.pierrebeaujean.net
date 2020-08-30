@@ -8,13 +8,11 @@
         <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4">
         {% for element in featured_collections[collection]|reverse %}
             <div class="col mb-4">
-                <div class="card">
-                    <a href="{{ element.link }}"><img src="{{ element.picture }}" class="card-img-top" alt="{{ element.name }}"></a>
-                  <div class="card-body">
-                      <h5 class="card-title"><a href="{{ element.link }}">{{ element.name }}</a></h5>
-                  </div>
-                </div>
-              </div>
+            <a class="card" href="{{ element.link }}">
+                <picture><img src="{{ element.picture }}" class="card-img-top" alt="{{ element.name }}"></picture>
+                <div class="card-overlay"><h5 class="card-title">{{ element.name }}</h5></div>
+            </a>
+            </div>
         {% endfor %}
         </div>
     {% endfor %}

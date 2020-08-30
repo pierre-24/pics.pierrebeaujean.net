@@ -150,3 +150,27 @@ class WriteImages(BaserWriter):
                                 final_path.symlink_to(initial_path.resolve())
 
                             i.attributes[w + '_final'] = str(self.directory.joinpath(name))
+
+
+class WriteCollections(TemplateMixin, BaserWriter):
+
+    def __init__(self):
+        super().__init__('element.html')
+
+    def __call__(self, collections: Iterable[Collection], destination: pathlib.Path, *args, **kwargs):
+        for collection in collections:
+            for e in collection.elements:
+                with destination.joinpath('{}{}'.format(collection.target, e.target)).open('w') as f:
+                    f.write(self.render_template(collections=collections, element=e, collection=collection))
+
+
+class WriteExtraFiles(BaserWriter):
+
+    def __init__(self, files: Iterable[pathlib.Path]):
+        super().__init__()
+        self.files = files
+
+    def __call__(self, collections: Iterable[Collection], destination: pathlib.Path, *args, **kwargs):
+        for f in self.files:
+            dest = destination.joinpath(f.name)
+            shutil.copy(f, dest)
