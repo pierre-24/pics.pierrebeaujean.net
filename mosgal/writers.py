@@ -1,4 +1,4 @@
-from typing import Callable
+from typing import Callable, Tuple
 import shutil
 from typing import Iterable
 import pathlib
@@ -95,14 +95,12 @@ class WriteImages(BaserWriter):
             self,
             directory: pathlib.Path,
             base_collection: str,
-            attributes: Iterable[str],
-            namer: Callable,
+            attributes: Iterable[Tuple[str, str]],
             strategy: str = 'copy'):
 
         super().__init__()
 
         self.directory = directory
-        self.name = namer
         self.what = attributes
         self.strategy = strategy
         self.base_collection = base_collection
@@ -115,17 +113,14 @@ class WriteImages(BaserWriter):
             if c.name == self.base_collection:
                 for e in c.elements:
                     for i in e.files:
-                        for w in self.what:
-                            initial_path = pathlib.Path(i.attributes[w])
-                            name = self.name(i, w)
+                        for initial, final in self.what:
+                            initial_path = pathlib.Path(i.attributes[initial])
+                            final_path = destination.joinpath(i.attributes[final])
 
-                            final_path = dest_dir.joinpath(name)
                             if self.strategy == 'copy':
                                 shutil.copy(initial_path, final_path)
                             elif self.strategy == 'symlink':
                                 final_path.symlink_to(initial_path.resolve())
-
-                            i.attributes[w + '_final'] = str(self.directory.joinpath(name))
 
 
 class WriteCollections(TemplateMixin, BaserWriter):

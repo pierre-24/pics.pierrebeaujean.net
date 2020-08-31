@@ -9,7 +9,7 @@
         {% for element in collection.elements|reverse %}
             <div class="col mb-4">
             <a class="card" href="{{ element.characteristics['target_file'] }}">
-                <picture><img src="{{ element.characteristics['thumbnail'].attributes['thumbnail_th_final'] }}" class="card-img-top" alt="{{ element.name }}"></picture>
+                <picture><img src="{{ element.characteristics['thumbnail'] }}" class="card-img-top" alt="{{ element.name }}"></picture>
                 <div class="card-overlay"><h5 class="card-title">{{ element.name }}</h5></div>
             </a>
             </div>

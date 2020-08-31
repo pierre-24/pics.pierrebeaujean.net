@@ -31,11 +31,12 @@ class AddThumbnailCharacteristic(BaseCharacterizer):
     """Select a file to be into the ``thumbnail`` characteristic
     """
 
-    def __init__(self, file_position: int = -1):
+    def __init__(self, file_attribute: str, file_position: int = -1):
         super().__init__()
 
+        self.file_attribute = file_attribute
         self.file_position = file_position
 
     def __call__(self, collection: Collection, *args, **kwargs) -> None:
         for element in collection.elements:
-            element.characteristics['thumbnail'] = element.files[self.file_position]
+            element.characteristics['thumbnail'] = element.files[self.file_position].attributes[self.file_attribute]

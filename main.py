@@ -2,7 +2,7 @@ import pathlib
 
 from mosgal.base_models import BaseTransformer, BaseFile, Element, Collection
 from mosgal.seekers import ImageSeeker, Image
-from mosgal.transformers import WithPIL, Resize, AddExifAttributes, ResizeMaxWidth, AddDominantColorsAttribute, \
+from mosgal.transformers import WithPIL, Resize, AddExifAttributes, AddDominantColorsAttribute, \
     AddDirectoryNameAttribute, AddMonthYearAttribute, TransformIf, Thumbnail, AddFocalClassAttribute
 from mosgal.classifiers import AttributeClassifier
 from mosgal.characterizers import SortElements, AddTargetCharacteristic, AddThumbnailCharacteristic
@@ -29,17 +29,15 @@ class Logger(BaseTransformer):
 indices = {}
 
 
-def image_name(image: Image, attribute: str) -> str:
-    type_ = attribute.split('_')[-1]
-    parent_directory = image.attributes['parent_directory']
-
-    index = parent_directory + '_' + type_
+def target_name(file: Image, target_attribute: str, suffix: str, file_format: str):
+    parent_directory = file.path.parts[-2]
+    index = parent_directory + '_' + suffix
     if index not in indices:
         indices[index] = 0
 
     indices[index] += 1
 
-    return '{}_{}_{}.JPG'.format(parent_directory, indices[index], type_)
+    return 'images/{}_{}_{}.{}'.format(parent_directory, indices[index], suffix, file_format)
 
 
 if __name__ == '__main__':
@@ -56,16 +54,16 @@ if __name__ == '__main__':
         seek=ImageSeeker(
             pathlib.Path('pictures'),
             extensions=['jpg', 'JPG', 'jpeg', 'JPEG'],
-            exclude=['.rs.JPG', '.lth.JPG', '.th.JPG'],
+            exclude=['.rs.JPEG', '.lth.JPEG', '.th.JPEG'],
         ),
         transformers=[
             TransformIf(
                 db.has,
                 if_false=[
                     WithPIL([
-                        Resize(750, 500, suffix='rs'),  # resized image (ratio=4:3)
-                        ResizeMaxWidth(300, suffix='lth'),  # thumbnail (width=300px)
-                        Thumbnail(300, 3*75, suffix='th'),  # thumbnail (width=300px)
+                        Resize(750, 500, suffix='rs', name_target=target_name),  # resized image (ratio=4:3)
+                        Resize(max_width=300, suffix='lth', name_target=target_name),  # thumbnail (width=300px)
+                        Thumbnail(300, 3 * 75, suffix='th', name_target=target_name),  # thumbnail (width=300px)
                         AddExifAttributes(),
                         AddDominantColorsAttribute(),
                         AddDirectoryNameAttribute(),
@@ -94,15 +92,18 @@ if __name__ == '__main__':
         characterizers=[
             SortElements('date_taken'),
             AddTargetCharacteristic(),
-            AddThumbnailCharacteristic(),
+            AddThumbnailCharacteristic('thumbnail_th_target'),
         ],
         writers=[
             BuildDirectory(pathlib.Path('./_build'), writers=[
                 WriteImages(
                     pathlib.Path('images/'),
                     'Album',
-                    ['resized_lth', 'thumbnail_th', 'resized_rs'],
-                    image_name
+                    [
+                        ('resized_lth', 'resized_lth_target'),
+                        ('thumbnail_th', 'thumbnail_th_target'),
+                        ('resized_rs', 'resized_rs_target')
+                    ]
                 ),
                 WriteIndex(['Album', 'Date']),
                 WriteCollections(),

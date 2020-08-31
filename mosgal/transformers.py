@@ -2,8 +2,10 @@ from typing import Callable, Iterable
 import io
 import datetime
 
-from PIL import ExifTags
+import PIL
+from PIL import ExifTags, Image as PILImage
 from PIL.TiffImagePlugin import IFDRational
+
 from colorthief import ColorThief
 
 from mosgal.base_models import BaseTransformer, BaseFile
@@ -42,7 +44,50 @@ class WithPIL(BaseTransformer):
         file.close_PIL()
 
 
-class Resize(BaseTransformer):
+def base_target_name(file: Image, target_attribute: str, suffix: str, file_format: str):
+    return 'images/{}_{}.{}'.format(file.path.stem, suffix, file_format)
+
+
+class BaseImageTransform(BaseTransformer):
+    """Base image transformer"""
+
+    def __init__(
+            self,
+            target_attribute: str = 'transformed',
+            suffix: str = 'x',
+            name_target: Callable = base_target_name,
+            output_format: str = 'JPEG',
+            encoder_options: dict = {'quality': 85},
+            keep_exif: bool = True
+    ):
+        super().__init__()
+
+        self.target_attribute = target_attribute
+        self.suffix = suffix
+        self.output_format = output_format
+        self.encoder_options = encoder_options
+        self.keep_exif = keep_exif
+        self.name_target = name_target
+
+    def transform(self, file: Image) -> PILImage:
+        raise NotImplementedError()
+
+    def __call__(self, file: Image, *args, **kwargs) -> None:
+        image = self.transform(file)
+        path = file.path.with_suffix('.{}.{}'.format(self.suffix, self.output_format))
+
+        image.save(
+            path,
+            self.output_format,
+            **self.encoder_options,
+            exif=file.pil_object.info['exif'] if self.keep_exif else b'')
+
+        file.attributes[self.target_attribute + '_' + self.suffix] = str(path)
+        file.attributes[self.target_attribute + '_' + self.suffix + '_target'] = str(
+            self.name_target(file, self.target_attribute, self.suffix, self.output_format))
+
+
+class Resize(BaseImageTransform):
     """
     Resize the base image if its width (height) is larger than ``max_width`` (``max_height``).
     Image ratio is conserved.
@@ -50,100 +95,55 @@ class Resize(BaseTransformer):
 
     def __init__(
             self,
-            max_width: int,
-            max_height: int,
+            max_width: int = -1,
+            max_height: int = -1,
             suffix='x',
+            name_target: Callable = base_target_name,
             encoder_options: dict = {'quality': 85, 'optimize': True},
             keep_exif: bool = True):
 
-        super().__init__()
+        super().__init__(
+            suffix=suffix,
+            target_attribute='resized',
+            encoder_options=encoder_options,
+            keep_exif=keep_exif,
+            name_target=name_target)
 
         self.max_width = max_width
         self.max_height = max_height
-        self.encoder_options = encoder_options
-        self.keep_exif = keep_exif  # TODO: only keep SOME exif data?
-        self.suffix = suffix
 
-    def __call__(self, file: Image, *args, **kwargs) -> None:
+    def transform(self, file: Image) -> PILImage:
+
         size = file.pil_object.size
-        exif_rotated = file.pil_object._getexif()[0x0112] != 1  # take into account EXIF "rotation" tag
+        exif_rotated = file.pil_object._getexif()[0x0112] in [3, 6, 8]  # take into account EXIF "rotation" tag
 
         if exif_rotated:
             size = size[1], size[0]
+
+        new_size = (-1, -1)
+        new_size_w = self.max_width, int(size[1] / size[0] * self.max_width)
+        new_size_h = int(size[0] / size[1] * self.max_height), self.max_height
+        resize = True
 
         is_portrait = size[0] > size[1]
 
-        if (is_portrait and size[0] <= self.max_width) or (not is_portrait and size[1] <= self.max_height):
-            file.resized_path = file.path
-
+        if (self.max_height < 0 or is_portrait) and size[0] > self.max_width:
+            new_size = new_size_w
+        elif (self.max_width < 0 or not is_portrait) and size[1] > self.max_height:
+            new_size = new_size_h
         else:
-            if is_portrait:
-                new_size = self.max_width, int(size[1] / size[0] * self.max_width)
-            else:
-                new_size = int(size[0] / size[1] * self.max_height), self.max_height
+            resize = False
 
+        if resize:
             if exif_rotated:
                 new_size = new_size[1], new_size[0]
 
-            i = file.pil_object.resize(new_size)
-            path = file.path.with_suffix('.{}.JPG'.format(self.suffix))
-
-            i.save(
-                path, 'JPEG',
-                **self.encoder_options,
-                exif=file.pil_object.info['exif'] if self.keep_exif else b'')
-
-            file.attributes['resized_' + self.suffix] = str(path)
-
-
-class ResizeMaxWidth(BaseTransformer):
-    """
-    Resize the base image if its width is larger than ``max_width``.
-    Image ratio is conserved.
-    """
-
-    def __init__(
-            self,
-            max_width: int,
-            suffix='x',
-            encoder_options: dict = {'quality': 85, 'optimize': True},
-            keep_exif: bool = True):
-
-        super().__init__()
-
-        self.max_width = max_width
-        self.encoder_options = encoder_options
-        self.keep_exif = keep_exif  # TODO: only keep SOME exif data?
-        self.suffix = suffix
-
-    def __call__(self, file: Image, *args, **kwargs) -> None:
-        size = file.pil_object.size
-        exif_rotated = file.pil_object._getexif()[0x0112] != 1  # take into account EXIF "rotation" tag
-
-        if exif_rotated:
-            size = size[1], size[0]
-
-        if size[0] <= self.max_width:
-            file.resized_path = file.path
-
+            return file.pil_object.resize(new_size)
         else:
-            new_size = self.max_width, int(size[1] / size[0] * self.max_width)
-
-            if exif_rotated:
-                new_size = new_size[1], new_size[0]
-
-            i = file.pil_object.resize(new_size)
-            path = file.path.with_suffix('.{}.JPG'.format(self.suffix))
-
-            i.save(
-                path, 'JPEG',
-                **self.encoder_options,
-                exif=file.pil_object.info['exif'] if self.keep_exif else b'')
-
-            file.attributes['resized_' + self.suffix] = str(path)
+            return file.pil_object
 
 
-class Thumbnail(BaseTransformer):
+class Thumbnail(BaseImageTransform):
     """
     Thumbnail base image.
     Ensure that the image will have exactly the specified size, by resizing then cropping the original one.
@@ -154,17 +154,22 @@ class Thumbnail(BaseTransformer):
             width: int,
             height: int,
             suffix='x',
-            encoder_options: dict = {'quality': 75, 'optimize': True}):
+            name_target: Callable = base_target_name,
+            encoder_options: dict = {'quality': 75, 'optimize': True},
+    ):
 
-        super().__init__()
+        super().__init__(
+            name_target=name_target,
+            target_attribute='thumbnail',
+            encoder_options=encoder_options,
+            suffix=suffix,
+            keep_exif=False)
 
         self.width = width
         self.height = height
         self.ratio = width / height
-        self.encoder_options = encoder_options
-        self.suffix = suffix
 
-    def __call__(self, file: Image, *args, **kwargs) -> None:
+    def transform(self, file: Image) -> PILImage:
         # rotate file based on the exif tag, if any
         rot = file.pil_object._getexif()[0x0112]
         rotate = {3: 180, 6: 270, 8: 90}
@@ -193,13 +198,7 @@ class Thumbnail(BaseTransformer):
             offset = int((new_size[1] - self.height) / 2)
             crop = (0, offset, self.width, offset + self.height)
 
-        image = image.crop(crop)
-
-        # save
-        path = file.path.with_suffix('.{}.JPG'.format(self.suffix))
-
-        image.save(path, 'JPEG', **self.encoder_options)
-        file.attributes['thumbnail_' + self.suffix] = str(path)
+        return image.crop(crop)
 
 
 class AddExifAttributes:

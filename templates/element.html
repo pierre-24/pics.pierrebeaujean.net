@@ -11,8 +11,8 @@
 
     <div class="card-columns" id="lightgallery">
         {% for file in element.files %}
-            <a href="{{ file.attributes['resized_rs_final'] }}" class="card" data-sub-html="{{ file.attributes['characteristics'] }}">
-                <img src="{{ file.attributes['resized_lth_final'] }}" class="card-img-top" alt="x" >
+            <a href="{{ file.attributes['resized_rs_target'] }}" class="card" data-sub-html="{{ file.attributes['characteristics'] }}">
+                <img src="{{ file.attributes['resized_lth_target'] }}" class="card-img-top" alt="x" >
             </a>
         {% endfor %}
     </div>
