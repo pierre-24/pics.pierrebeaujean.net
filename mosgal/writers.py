@@ -1,8 +1,10 @@
-from typing import Callable, Tuple
+from typing import Tuple
 import shutil
 from typing import Iterable
 import pathlib
 from jinja2 import Environment, select_autoescape, FileSystemLoader
+from datetime import datetime
+from markdown import markdown
 
 from mosgal.base_models import BaserWriter, Collection
 
@@ -54,12 +56,12 @@ class WriteTemplate(TemplateMixin, BaserWriter):
     """Write a template into ``destination``
     """
 
-    def __init__(self, template_name, destination_file: pathlib.Path()):
+    def __init__(self, template_name: str, destination_file: pathlib.Path()):
         super().__init__(template_name)
         self.destination_file = destination_file
 
     def get_context_data(self, collections: Iterable[Collection], *args, **kwargs):
-        return {}
+        return {'collections': collections, 'now': datetime.now().strftime('%d/%m/%Y')}
 
     def __call__(self, collections: Iterable[Collection], destination: pathlib.Path, *args, **kwargs):
         with pathlib.Path.joinpath(destination, self.destination_file).open('w') as f:
@@ -67,8 +69,7 @@ class WriteTemplate(TemplateMixin, BaserWriter):
 
 
 class WriteIndex(WriteTemplate):
-    def __init__(self,
-            collections: Iterable[str] ):
+    def __init__(self, collections: Iterable[str] ):
         super().__init__('index.html', 'index.html')
         self.collections = collections
 
@@ -132,7 +133,12 @@ class WriteCollections(TemplateMixin, BaserWriter):
         for collection in collections:
             for e in collection.elements:
                 with destination.joinpath(e.characteristics['target_file']).open('w') as f:
-                    f.write(self.render_template(collections=collections, element=e, collection=collection))
+                    f.write(self.render_template(
+                        collections=collections,
+                        element=e,
+                        collection=collection,
+                        now=datetime.now().strftime('%d/%m/%Y')
+                    ))
 
 
 class WriteExtraFiles(BaserWriter):
@@ -145,3 +151,20 @@ class WriteExtraFiles(BaserWriter):
         for f in self.files:
             dest = destination.joinpath(f.name)
             shutil.copy(f, dest)
+
+
+class WriteAbout(WriteTemplate):
+    def __init__(self, about_file: pathlib.Path):
+        super().__init__('about.html', 'about.html')
+
+        self.about_file = about_file
+
+    def get_context_data(self, collections: Iterable[Collection], *args, **kwargs):
+        data = super().get_context_data(collections, *args, **kwargs)
+
+        data['collections'] = collections
+
+        with self.about_file.open() as f:
+            data['about'] = markdown(f.read())
+
+        return data

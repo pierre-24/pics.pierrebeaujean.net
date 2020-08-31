@@ -1,13 +1,13 @@
 import pathlib
 
-from mosgal.base_models import BaseTransformer, BaseFile, Element, Collection
+from mosgal.base_models import BaseTransformer, BaseFile
 from mosgal.seekers import ImageSeeker, Image
 from mosgal.transformers import WithPIL, Resize, AddExifAttributes, AddDominantColorsAttribute, \
     AddDirectoryNameAttribute, AddMonthYearAttribute, TransformIf, Thumbnail, AddFocalClassAttribute
 from mosgal.classifiers import AttributeClassifier
 from mosgal.characterizers import SortElements, AddTargetCharacteristic, AddThumbnailCharacteristic, \
     AddAlbumCharacteristics
-from mosgal.writers import BuildDirectory, WriteIndex, WriteImages, WriteCollections, WriteExtraFiles
+from mosgal.writers import BuildDirectory, WriteIndex, WriteImages, WriteCollections, WriteExtraFiles, WriteAbout
 from mosgal.pipelines import simple_pipeline
 
 from mosgal.ext.database import ImageDB, AddToImageDB, UpdateFromImageDB, WriteImageDB
@@ -109,6 +109,7 @@ if __name__ == '__main__':
                 ),
                 WriteIndex(['Album', 'Date']),
                 WriteCollections(),
+                WriteAbout(pathlib.Path('./pictures/about.md')),
                 WriteExtraFiles([pathlib.Path('./templates/style.css')]),
                 WriteImageDB(db, db_path),
             ])

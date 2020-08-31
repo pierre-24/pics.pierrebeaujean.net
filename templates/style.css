@@ -23,3 +23,12 @@
 .card:hover .card-overlay h5 {
     color: white; bottom: unset; top: 50%; transform: translateY(-50%); height: 100%; padding-top: 33%;
 }
+
+footer {
+    margin-top: 32px;
+    padding: 16px;
+    background-color: #f8f9fa;
+    font-size: 80%;
+    color: #555;
+    text-align: center;
+}

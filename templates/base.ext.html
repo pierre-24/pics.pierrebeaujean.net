@@ -33,15 +33,27 @@
                     </div>
                 </li>
                 {% endfor %}
+
+                <li class="nav-item">
+                    <a class="nav-link" href="about.html">About</a>
+                </li>
             </div>
         </div>
     </div>
     </nav>
     {% block content %}
-        <div class="container">
+        <main class="container">
             {% block page_content %}
             {% endblock %}
-        </div>
+        </main>
+
+        <footer class="footer">
+          <div class="container">
+              Static website (more info <a href="about.html">there</a>).
+              Hosted by <a href="https://www.digitalocean.com/">Digital Ocean</a> and powered by <a href="http://nginx.org/">NGINX</a>.
+              Page generated on {{ now }}.
+          </div>
+        </footer>
     {% endblock %}
 
     {% block scripts %}
