@@ -1,4 +1,4 @@
-from typing import Callable, Iterable, List
+from typing import Iterable, List
 
 from mosgal.base_models import BaseClassifier, BaseFile, Collection, Element
 
@@ -13,32 +13,22 @@ class AttributeClassifier(BaseClassifier):
             self,
             attribute: str,
             name: str = None,
-            description: str = '',
-            target: str = '',
-            get_element_name: Callable = lambda n: n,
-            get_element_description: Callable = lambda n: '',
-            get_element_target: Callable = lambda n: '',
             exclude: Iterable[str] = ()):
-        super().__init__(name=name if name is not None else attribute, description=description, target=target)
+        super().__init__(name=name if name is not None else attribute)
 
         self.attribute = attribute
-        self.get_element_name = get_element_name
-        self.get_element_description = get_element_description
-        self.get_element_target = get_element_target
         self.exclude = exclude
 
     def __call__(self, files: List[BaseFile], *args, **kwargs) -> Collection:
         elements = {}
+        collection = Collection(self.name)
 
         def treat_values(val_, file_):
             if val_ in self.exclude:
                 return
 
             if val_ not in elements:
-                name = self.get_element_name(val_)
-                el = Element(
-                    name, description=self.get_element_description(val_), target=self.get_element_target(name))
-                elements[val_] = el
+                elements[val_] = Element(val_)
 
             elements[val_].append(file_)
 
@@ -53,5 +43,5 @@ class AttributeClassifier(BaseClassifier):
             else:
                 treat_values(value, f)
 
-        return Collection(
-            self.name, description=self.description, elements=list(elements.values()), target=self.target)
+        collection.elements = list(elements.values())
+        return collection

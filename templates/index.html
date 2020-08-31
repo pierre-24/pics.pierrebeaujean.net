@@ -4,12 +4,12 @@
 
 {% block page_content %}
     {% for collection in featured_collections %}
-        <h2>{{ collection }}</h2>
+        <h2>{{ collection.name }}</h2>
         <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4">
-        {% for element in featured_collections[collection]|reverse %}
+        {% for element in collection.elements|reverse %}
             <div class="col mb-4">
-            <a class="card" href="{{ element.link }}">
-                <picture><img src="{{ element.picture }}" class="card-img-top" alt="{{ element.name }}"></picture>
+            <a class="card" href="{{ element.characteristics['target_file'] }}">
+                <picture><img src="{{ element.characteristics['thumbnail'].attributes['thumbnail_th_final'] }}" class="card-img-top" alt="{{ element.name }}"></picture>
                 <div class="card-overlay"><h5 class="card-title">{{ element.name }}</h5></div>
             </a>
             </div>

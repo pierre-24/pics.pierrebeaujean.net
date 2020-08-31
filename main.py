@@ -1,12 +1,11 @@
 import pathlib
 
-from slugify import slugify
-
-from mosgal.base_models import BaseTransformer, BaseFile
+from mosgal.base_models import BaseTransformer, BaseFile, Element, Collection
 from mosgal.seekers import ImageSeeker, Image
 from mosgal.transformers import WithPIL, Resize, AddExifAttributes, ResizeMaxWidth, AddDominantColorsAttribute, \
     AddDirectoryNameAttribute, AddMonthYearAttribute, TransformIf, Thumbnail, AddFocalClassAttribute
 from mosgal.classifiers import AttributeClassifier
+from mosgal.characterizers import SortElements, AddTargetCharacteristic, AddThumbnailCharacteristic
 from mosgal.writers import BuildDirectory, WriteIndex, WriteImages, WriteCollections, WriteExtraFiles
 from mosgal.pipelines import simple_pipeline
 
@@ -41,10 +40,6 @@ def image_name(image: Image, attribute: str) -> str:
     indices[index] += 1
 
     return '{}_{}_{}.JPG'.format(parent_directory, indices[index], type_)
-
-
-def element_target(name: str) -> str:
-    return '__{}.html'.format(slugify(name))
 
 
 if __name__ == '__main__':
@@ -87,16 +82,19 @@ if __name__ == '__main__':
         ],
         organizer=lambda l: sorted(l, key=lambda k: k.attributes['date_taken']),
         classifiers=[
-            AttributeClassifier('parent_directory', name='Album', target='album', get_element_target=element_target),
-            AttributeClassifier('month_year', name='Date', target='date', get_element_target=element_target),
-            AttributeClassifier('focal_class', 'Focal', target='focal', get_element_target=element_target),
+            AttributeClassifier('parent_directory', name='Album'),
+            AttributeClassifier('month_year', name='Date'),
+            AttributeClassifier('focal_class', 'Focal'),
             AttributeClassifier(
                 'dominant_color_names',
                 name='Colors',
-                exclude=['lightgray', 'darkgray'],
-                target='colors',
-                get_element_target=element_target
+                exclude=['lightgray', 'darkgray']
             )
+        ],
+        characterizers=[
+            SortElements('date_taken'),
+            AddTargetCharacteristic(),
+            AddThumbnailCharacteristic(),
         ],
         writers=[
             BuildDirectory(pathlib.Path('./_build'), writers=[
@@ -106,7 +104,7 @@ if __name__ == '__main__':
                     ['resized_lth', 'thumbnail_th', 'resized_rs'],
                     image_name
                 ),
-                WriteIndex(['Album', 'Date'], 'thumbnail_th_final', sorting_criterion='date_taken'),
+                WriteIndex(['Album', 'Date']),
                 WriteCollections(),
                 WriteExtraFiles([pathlib.Path('./templates/style.css')]),
                 WriteImageDB(db, db_path),

@@ -67,40 +67,16 @@ class WriteTemplate(TemplateMixin, BaserWriter):
 
 
 class WriteIndex(WriteTemplate):
-    def __init__(
-            self,
-            collections: Iterable[str],
-            thumbnail_attribute: str,
-            sorting_criterion: str = None
-    ):
+    def __init__(self,
+            collections: Iterable[str] ):
         super().__init__('index.html', 'index.html')
         self.collections = collections
-        self.element_thumbnail_attribute = thumbnail_attribute
-        self.sorting_criterion = sorting_criterion
 
     def get_context_data(self, collections: Iterable[Collection], *args, **kwargs):
         data = super().get_context_data(collections, *args, **kwargs)
 
         data['collections'] = collections
-        data['featured_collections'] = {}
-
-        for name in self.collections:
-            current_collection = next(filter(lambda cl: cl.name == name, collections))
-            collect = []
-            for el in current_collection.elements:
-                info = {
-                    'name': el.name,
-                    'link': '{}{}'.format(current_collection.target, el.target),
-                    'picture': el.files[-1].attributes[self.element_thumbnail_attribute]
-                }
-                if self.sorting_criterion is not None:
-                    info.update({self.sorting_criterion: el.files[-1].attributes[self.sorting_criterion]})
-                collect.append(info)
-
-            if self.sorting_criterion is not None:
-                collect.sort(key=lambda el: el[self.sorting_criterion])
-
-            data['featured_collections'][name] = collect
+        data['featured_collections'] = list(filter(lambda cl: cl.name in self.collections, collections))
 
         return data
 
@@ -160,7 +136,7 @@ class WriteCollections(TemplateMixin, BaserWriter):
     def __call__(self, collections: Iterable[Collection], destination: pathlib.Path, *args, **kwargs):
         for collection in collections:
             for e in collection.elements:
-                with destination.joinpath('{}{}'.format(collection.target, e.target)).open('w') as f:
+                with destination.joinpath(e.characteristics['target_file']).open('w') as f:
                     f.write(self.render_template(collections=collections, element=e, collection=collection))
 
 

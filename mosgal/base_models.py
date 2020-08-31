@@ -66,13 +66,14 @@ class BaseFetcher:
 
 
 class Element:
-    """Element of a ``Collection``, which contains files.
+    """Element of a ``Collection``, which contains files and has ``attributes``
     """
-    def __init__(self, name: str, files: List[BaseFile] = (), description: str = '', target: str = ''):
+
+    def __init__(self, name: str, files: List[BaseFile] = ()):
         self.name = name
-        self.description = description
+        self.characteristics = {}
+
         self.files = list(files)
-        self.target = target
 
     def append(self, file_: BaseFile) -> None:
         self.files.append(file_)
@@ -81,11 +82,11 @@ class Element:
 class Collection:
     """Collection of ``Element`` (probably based on a sorting criterion)
     """
-    def __init__(self, name: str, elements: List[Element] = (), description: str = '', target: str = ''):
+    def __init__(self, name: str, elements: List[Element] = ()):
         self.name = name
-        self.description = description
+        self.characteristics = {}
+
         self.elements = list(elements)
-        self.target = target
 
     def append(self, element: Element) -> None:
         self.elements.append(element)
@@ -94,13 +95,22 @@ class Collection:
 class BaseClassifier:
     """Classify files into a ``Collection``.
     """
-    def __init__(self, name: str, description: str = '', target: str = ''):
+    def __init__(self, name: str):
         self.name = name
-        self.description = description
-        self.target = target
 
     def __call__(self, files: List[BaseFile], *args, **kwargs) -> Collection:
         raise NotImplementedError()
+
+
+class BaseCharacterizer:
+    """Characterize a collection (add attributes)
+    """
+
+    def __init__(self):
+        pass
+
+    def __call__(self, collection: Collection, *args, **kwargs) -> None:
+        pass
 
 
 class BaseCollector:
@@ -111,16 +121,21 @@ class BaseCollector:
             self,
             fetcher: BaseFetcher = BaseFetcher(),
             classifiers: Iterable[BaseClassifier] = (),
+            characterizers: Iterable[BaseCharacterizer] = (),
             organizer: Callable = lambda li: li):
         self.fetch = fetcher
         self.classifiers = classifiers
+        self.characterizers = characterizers
         self.organize = organizer
 
     def __call__(self, *args, **kwargs) -> Iterator[Collection]:
         files = self.organize(self.fetch())
 
         for classify in self.classifiers:
-            yield classify(files)
+            c = classify(files)
+            for characterize in self.characterizers:
+                characterize(c)
+            yield c
 
 
 class BaserWriter:
