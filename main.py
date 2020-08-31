@@ -5,7 +5,8 @@ from mosgal.seekers import ImageSeeker, Image
 from mosgal.transformers import WithPIL, Resize, AddExifAttributes, AddDominantColorsAttribute, \
     AddDirectoryNameAttribute, AddMonthYearAttribute, TransformIf, Thumbnail, AddFocalClassAttribute
 from mosgal.classifiers import AttributeClassifier
-from mosgal.characterizers import SortElements, AddTargetCharacteristic, AddThumbnailCharacteristic
+from mosgal.characterizers import SortElements, AddTargetCharacteristic, AddThumbnailCharacteristic, \
+    AddAlbumCharacteristics
 from mosgal.writers import BuildDirectory, WriteIndex, WriteImages, WriteCollections, WriteExtraFiles
 from mosgal.pipelines import simple_pipeline
 
@@ -91,8 +92,9 @@ if __name__ == '__main__':
         ],
         characterizers=[
             SortElements('date_taken'),
-            AddTargetCharacteristic(),
             AddThumbnailCharacteristic('thumbnail_th_target'),
+            AddAlbumCharacteristics('Album', 'thumbnail_th_target'),
+            AddTargetCharacteristic(),
         ],
         writers=[
             BuildDirectory(pathlib.Path('./_build'), writers=[

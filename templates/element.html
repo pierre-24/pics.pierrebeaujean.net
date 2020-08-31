@@ -5,8 +5,9 @@
 {% block page_content %}
     <h2>{{ collection.name }}: {{ element.name }}</h2>
 
-    {% if collection.description %}
-        <p class="description">{{ collection.description }}</p>
+
+    {% if 'description' in element.characteristics %}
+        <p class="description">{{ element.characteristics['description']|safe }}</p>
     {% endif %}
 
     <div class="card-columns" id="lightgallery">

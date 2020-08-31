@@ -1,4 +1,5 @@
 from slugify import slugify
+from markdown import markdown
 
 from mosgal.base_models import BaseCharacterizer, Collection
 
@@ -17,7 +18,7 @@ class SortElements(BaseCharacterizer):
 
 
 class AddTargetCharacteristic(BaseCharacterizer):
-    """Add a ``target_file`` characteristic to elements, based on the name of the collection and the element
+    """Add a ``target_file`` characteristic to elements, based on the name of the collection and of the element
     """
 
     def __call__(self, collection: Collection, *args, **kwargs) -> None:
@@ -40,3 +41,51 @@ class AddThumbnailCharacteristic(BaseCharacterizer):
     def __call__(self, collection: Collection, *args, **kwargs) -> None:
         for element in collection.elements:
             element.characteristics['thumbnail'] = element.files[self.file_position].attributes[self.file_attribute]
+
+
+class AddAlbumCharacteristics(BaseCharacterizer):
+    """Extract some extra characteristics of an element into a ``index.md`` file found in the same directory as
+    the images.
+
+    If it exists, it can start by:
+
+    + ``Title: xxx``, which changes the name of the element to ``xxx``,
+    + ``Thumbnail: xxx``, which changes the ``thumbnail`` characteristic of the element to the corresponding thumbnail.
+
+    The rest is taken as the ``description`` characteristic, formatted in Markdown.
+    """
+
+    def __init__(self, collection_name: str, thumbnail_file_attribute: str):
+        super().__init__()
+
+        self.collection_name = collection_name
+        self.thumbnail_file_attribute = thumbnail_file_attribute
+
+    def __call__(self, collection: Collection, *args, **kwargs) -> None:
+        if collection.name != self.collection_name:
+            return
+
+        for element in collection.elements:
+            # try to find a index.md file
+            path = element.files[-1].path.parent.joinpath('index.md')
+            if path.exists():
+                with path.open() as f:
+                    content = f.read()
+
+                lines = content.splitlines()
+
+                index = 0
+                for index, line in enumerate(lines):
+                    if ':' not in line:
+                        break
+
+                    key, val = line.split(':', maxsplit=1)
+                    if key == 'Title':
+                        element.name = val.strip()
+                    elif key == 'Thumbnail':
+                        file = next(filter(lambda fi: fi.path.name == val.strip(), element.files))
+                        element.characteristics['thumbnail'] = file.attributes[self.thumbnail_file_attribute]
+                    else:
+                        break
+
+                element.characteristics['description'] = markdown('\n'.join(lines[index:]))
