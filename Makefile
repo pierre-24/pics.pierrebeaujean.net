@@ -10,4 +10,4 @@ init:
 	pip3 install --upgrade -r requirements.txt
 
 gen:
-	sigal build images
+	python3 ./main.py

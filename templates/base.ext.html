@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
-    <title>Pierre's pictures &gt; {% block page_title %}{% endblock %}</title>
+    <title>{{ site_name }} &gt; {% block page_title %}{% endblock %}</title>
 
     {% block style %}
         <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" integrity="sha384-JcKb8q3iqJ61gNV9KGb8thSsNjpSL0n8PARn9HuZOnIxN0hoP+VmmDGMN5t9UJ0Z" crossorigin="anonymous">
@@ -14,7 +14,7 @@
 <body>
     <nav class="navbar navbar-expand-lg navbar-light bg-light">
     <div class="container">
-        <a class="navbar-brand" href="index.html">Pierre's pictures</a>
+        <a class="navbar-brand" href="index.html">{{ site_name }}</a>
             <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavAltMarkup" aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
@@ -49,8 +49,7 @@
 
         <footer class="footer">
           <div class="container">
-              Static website (more info <a href="about.html">there</a>).
-              Hosted by <a href="https://www.digitalocean.com/">Digital Ocean</a> and powered by <a href="http://nginx.org/">NGINX</a>.
+              {{ footer|safe }}
               Page generated on {{ now }}.
           </div>
         </footer>
