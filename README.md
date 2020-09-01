@@ -6,7 +6,7 @@
 Yet another gallery (generator) in order to share the stuffs I made with my camera.
 
 This work is heavily inspired by [the one](https://coree.spacefox.fr/) of [Spacefox](https://coree.spacefox.fr/pages/spacefox/), distributed under [CC BY 4.0](http://creativecommons.org/licenses/by/4.0/).
-
+Some idea were also taken from [Sigal](http://sigal.saimon.org/en/latest/index.html).
 
 ## How ?
 
