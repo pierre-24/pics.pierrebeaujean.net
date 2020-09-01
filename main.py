@@ -46,7 +46,7 @@ if __name__ == '__main__':
 
     db = ImageDB()
 
-    db_path = pathlib.Path('./images.json')
+    db_path = pathlib.Path('./pictures/images.json')
     if db_path.exists():
         with db_path.open() as f:
             db.load(f)
@@ -69,7 +69,7 @@ if __name__ == '__main__':
                 db.has,
                 if_false=[
                     WithPIL([
-                        Resize(750, 500, suffix='rs', name_target=target_name),  # resized image (ratio=4:3)
+                        Resize(1920, 1440, suffix='rs', name_target=target_name),  # resized image (ratio=4:3)
                         Resize(max_width=300, suffix='lth', name_target=target_name),  # thumbnail (width=300px)
                         Thumbnail(300, 3 * 75, suffix='th', name_target=target_name),  # thumbnail (width=300px)
                         AddExifAttributes(),
