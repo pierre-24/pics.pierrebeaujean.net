@@ -28,18 +28,9 @@ class Logger(BaseTransformer):
                 print('  -', k, ':', v)
 
 
-indices = {}
-
-
 def target_name(file: Image, target_attribute: str, suffix: str, file_format: str):
     parent_directory = file.path.parts[-2]
-    index = parent_directory + '_' + suffix
-    if index not in indices:
-        indices[index] = 0
-
-    indices[index] += 1
-
-    return 'images/{}_{}_{}.{}'.format(parent_directory, indices[index], suffix, file_format)
+    return 'images/{}_{}_{}.{}'.format(parent_directory, len(db.from_source), suffix, file_format)
 
 
 if __name__ == '__main__':
