@@ -90,11 +90,10 @@ if __name__ == '__main__':
         classifiers=[
             AttributeClassifier('parent_directory', name='Album'),
             AttributeClassifier('month_year', name='Date'),
-            AttributeClassifier('focal_class', 'Focal'),
+            AttributeClassifier('focal_class', name='Focal'),
             AttributeClassifier(
                 'dominant_color_names',
                 name='Colors',
-                exclude=['lightgray', 'darkgray']
             )
         ],
         characterizers=[

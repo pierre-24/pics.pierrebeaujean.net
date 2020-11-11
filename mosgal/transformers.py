@@ -2,7 +2,8 @@ from typing import Callable, Iterable
 import io
 import datetime
 
-import PIL
+import colorsys
+
 from PIL import ExifTags, Image as PILImage
 from PIL.TiffImagePlugin import IFDRational
 
@@ -229,64 +230,87 @@ class AddExifAttributes:
         file.attributes.update(**data)
 
 
+def rgb_to_hsv(r: int, g: int, b: int) -> tuple:
+    """Convert an RGB color (from 0 to 255) to HSV equivalent (from 0 to 1)
+    """
+    return colorsys.rgb_to_hsv(r / 255, g / 255, b / 255)
+
+
 class AddDominantColorsAttribute(BaseTransformer):
     """
     Determine the dominant color, based on a reduced 150x150 version
     of the image. Get the name based on the CSS colors.
     """
 
-    # TODO: a custom palette would do a better job here, I think
-
     PALETTE = {
         # RGB pure
-        'red': (255, 0, 0),
-        'green': (0, 255, 0),
-        'blue': (0, 0, 255),
-        'black': (0, 0, 0),
-        # mixes
-        'yellow': (255, 255, 0),
-        'cyan': (0, 255, 255),
-        'pink': (255, 0, 255),
-        'white': (255, 255, 255),
-        # half-tones
-        'maroon': (128, 0, 0),
-        'darkgreen': (0, 128, 0),
-        'navy': (0, 0, 128),
-        # half-tones mixes
-        'teal': (0, 128, 128),
-        'olive': (128, 128, 0),
-        'purple': (128, 0, 128),
-        'gray': (128, 128, 128),
-        # extra grays
-        'darkgray': (75, 75, 75),
-        'lightgray': (192, 192, 192),
-        # extra colors:
-        'orange': (255, 128, 0),
-        'deeppink': (255, 0, 128),
-        'springgreen': (0, 255, 128),
-        'turquoise': (64, 224, 208),
-        'indigo': (75, 0, 130),
-        'brown': (210, 105, 30),
-        'deepblue': (70, 100, 180),
+        'redish': (
+            rgb_to_hsv(255, 0, 0),
+            rgb_to_hsv(128, 0, 0),  # maroon
+            rgb_to_hsv(210, 105, 30),  # brown
+        ),
+        'greenish': (
+            rgb_to_hsv(0, 255, 0),
+            rgb_to_hsv(0, 128, 0),  # dark green
+            rgb_to_hsv(128, 128, 0),  # olive
+            rgb_to_hsv(0, 255, 128),  # spring green
+            rgb_to_hsv(75, 0, 130),  # indigo
+        ),
+        'blueish': (
+            rgb_to_hsv(0, 0, 255),
+            rgb_to_hsv(0, 255, 255),  # cyan
+            rgb_to_hsv(0, 0, 128),  # navy
+            rgb_to_hsv(0, 128, 128),  # teal
+            rgb_to_hsv(64, 224, 208),  # turquoise
+            rgb_to_hsv(70, 100, 180),  # deep blue
+        ),
+        'grayish': (
+            rgb_to_hsv(128, 128, 128),
+            rgb_to_hsv(75, 75, 75),
+            rgb_to_hsv(75, 75, 75),
+        ),
+        'pink': (
+            rgb_to_hsv(255, 0, 255),
+            rgb_to_hsv(255, 0, 128),  # deep pink
+            rgb_to_hsv(128, 0, 128),  # purple
+        ),
+        # few extra colors:
+        'black': (
+            rgb_to_hsv(0, 0, 0),
+        ),
+        'yellow': (
+            rgb_to_hsv(255, 255, 0),
+        ),
+        'white': (
+            rgb_to_hsv(255, 255, 255),
+        ),
+        'orange': (
+            rgb_to_hsv(255, 128, 0),
+        ),
     }
 
-    def __init__(self, color_count: int = 10, quality: int = 10, color_source: dict = PALETTE, im_size=150):
+    def __init__(
+            self,
+            color_count: int = 10,
+            reduced_to: int = 5,
+            quality: int = 5,
+            color_source: dict = PALETTE,
+            im_size: int = 250):
         super().__init__()
 
         self.color_count = color_count
         self.quality = quality
+        self.reduce_to = reduced_to
         self.color_source = color_source
         self.im_size = im_size
 
     def _find_closest(self, r: int, g: int, b: int) -> str:
-        min_colours = {}
-        for name, colour in self.color_source.items():
-            r_c, g_c, b_c = colour
-            rd = (r_c - r) ** 2
-            gd = (g_c - g) ** 2
-            bd = (b_c - b) ** 2
-            min_colours[(rd + gd + bd)] = name
-        return min_colours[min(min_colours.keys())]
+        min_colors = {}
+        h, s, v = rgb_to_hsv(r, g, b)
+        for name, colors in self.color_source.items():
+            for color in colors:
+                min_colors[sum((x - y) ** 2 for x, y in zip(color, (h, s, v)))] = name
+        return min_colors[min(min_colors.keys())]
 
     def __call__(self, file: Image, *args, **kwargs) -> None:
 
@@ -299,7 +323,7 @@ class AddDominantColorsAttribute(BaseTransformer):
         im.save(f, 'JPEG')
 
         palette = ColorThief(f).get_palette(
-            color_count=self.color_count, quality=self.quality)[:self.color_count]
+            color_count=self.color_count, quality=self.quality)[:self.reduce_to]
 
         dominants = list((c, self._find_closest(*c)) for c in palette)
         file.attributes['dominant_color_names'] = list(set(c[1] for c in dominants))
@@ -328,9 +352,18 @@ class AddMonthYearAttribute:
 
 class AddFocalClassAttribute:
     """Add a ``focal_class`` attribute, that cast the (35mm film equivalent) focal length into a
-    "large" (< 40), "normal" (40-100) or "zoom" (> 100) class.
+    "large" (<= 40), "normal" (40-100) or "zoom" (>= 100) class.
     """
+
+    classes = {
+        'large': (0, 40),
+        'normal': (40, 100),
+        'zoom': (100, 5000)
+    }
 
     def __call__(self, file: Image, *args, **kwargs) -> None:
         f_length = file.pil_object.getexif()[0xA405]
-        file.attributes['focal_class'] = 'large' if f_length < 40 else 'normal' if f_length < 100 else 'zoom'
+
+        for c, l in self.classes:
+            if l[0] <= f_length <= l[1]:
+                file.attributes['focal_class'] = c
