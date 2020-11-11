@@ -1,4 +1,4 @@
-from typing import Iterable, List
+from typing import Iterable
 
 from mosgal.base_models import BaseClassifier, BaseFile, Collection, Element
 
@@ -19,7 +19,7 @@ class AttributeClassifier(BaseClassifier):
         self.attribute = attribute
         self.exclude = exclude
 
-    def __call__(self, files: List[BaseFile], *args, **kwargs) -> Collection:
+    def __call__(self, files: Iterable[BaseFile], *args, **kwargs) -> Collection:
         elements = {}
         collection = Collection(self.name)
 

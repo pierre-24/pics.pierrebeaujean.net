@@ -1,7 +1,8 @@
+from typing import Callable
 from slugify import slugify
 from markdown import markdown
 
-from mosgal.base_models import BaseCharacterizer, Collection
+from mosgal.base_models import BaseCharacterizer, Collection, Element
 
 
 class SortElements(BaseCharacterizer):
@@ -17,15 +18,22 @@ class SortElements(BaseCharacterizer):
         collection.elements.sort(key=lambda e: e.files[self.file_position].attributes[self.file_attribute])
 
 
+def get_target(collection: Collection, element: Element):
+    return '{}__{}.html'.format(slugify(collection.name), slugify(element.name))
+
+
 class AddTargetCharacteristic(BaseCharacterizer):
     """Add a ``target_file`` characteristic to elements, based on the name of the collection and of the element
     """
 
+    def __init__(self, get_target: Callable = get_target):
+        super().__init__()
+        self.get_target = get_target
+
     def __call__(self, collection: Collection, *args, **kwargs) -> None:
-        collection_slug = slugify(collection.name)
 
         for element in collection.elements:
-            element.characteristics['target_file'] = '{}__{}.html'.format(collection_slug, slugify(element.name))
+            element.characteristics['target_file'] = self.get_target(collection, element)
 
 
 class AddThumbnailCharacteristic(BaseCharacterizer):
@@ -75,8 +83,10 @@ class AddAlbumCharacteristics(BaseCharacterizer):
                 lines = content.splitlines()
 
                 index = 0
+                has_description = False
                 for index, line in enumerate(lines):
                     if ':' not in line:
+                        has_description = True
                         break
 
                     key, val = line.split(':', maxsplit=1)
@@ -86,6 +96,8 @@ class AddAlbumCharacteristics(BaseCharacterizer):
                         file = next(filter(lambda fi: fi.path.name == val.strip(), element.files))
                         element.characteristics['thumbnail'] = file.attributes[self.thumbnail_file_attribute]
                     else:
+                        has_description = True
                         break
 
-                element.characteristics['description'] = markdown('\n'.join(lines[index:]))
+                if index < len(lines) - 1 or has_description:
+                    element.characteristics['description'] = markdown('\n'.join(lines[index:]))
