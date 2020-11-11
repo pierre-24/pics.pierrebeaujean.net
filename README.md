@@ -5,7 +5,7 @@
 
 Yet another gallery (generator) in order to share the stuffs I made with my camera.
 
-This work is heavily inspired by [the one](https://github.com/SpaceFox/coree.spacefox.fr) of [Spacefox](https://coree.spacefox.fr/pages/spacefox/) (distributed under [MIT](https://github.com/SpaceFox/coree.spacefox.fr/blob/master/LICENSE.md).
+This work is heavily inspired by [the one](https://github.com/SpaceFox/coree.spacefox.fr) of [Spacefox](https://coree.spacefox.fr/pages/spacefox/) (distributed under [MIT](https://github.com/SpaceFox/coree.spacefox.fr/blob/master/LICENSE.md)).
 Some (technical) ideas originated from [Sigal](http://sigal.saimon.org/en/latest/index.html).
 
 ## How ?

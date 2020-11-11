@@ -1,17 +1,19 @@
 import pathlib
 import datetime
-from PIL import ExifTags, Image as PILImage
+import colorsys
+from PIL import ExifTags, Image as PILImage, ImageDraw
 
-from mosgal.seekers import ImageSeeker
+from mosgal.seekers import ImageSeeker, Image
 from mosgal.base_models import BaseTransformer
-from mosgal.transformers import AddExifAttributes, WithPIL, AddMonthYearAttribute, AddFocalClassAttribute, TransformIf
+from mosgal.transformers import AddExifAttributes, WithPIL, AddMonthYearAttribute, AddFocalClassAttribute, \
+    TransformIf, AddDominantColorsAttribute, AddDirectoryNameAttribute, Resize, Thumbnail
 
 from tests import MosgalTestCase
 
 rev_exif_tags = dict((b, a) for a, b in ExifTags.TAGS.items())
 
 
-class TestSeeker(MosgalTestCase):
+class TestTransformers(MosgalTestCase):
 
     def setUp(self) -> None:
         self.files = [
@@ -25,7 +27,7 @@ class TestSeeker(MosgalTestCase):
             p.parent.mkdir()
             self.copy_to_temporary_directory(source, loc)
 
-        self.images = list(ImageSeeker(self.temporary_directory)())
+        self.images = list(ImageSeeker(self.temporary_directory, extensions=['JPEG'])())
 
     def test_transform_if(self):
         """Test the TransformIf transformer
@@ -109,3 +111,132 @@ class TestSeeker(MosgalTestCase):
                 self.assertEqual(image.attributes['focal_class'], 'large')
             else:
                 self.assertEqual(image.attributes['focal_class'], 'small')
+
+    def test_add_dominant_colors(self):
+        """Test dominant colors"""
+
+        transform = AddDominantColorsAttribute()
+
+        # only one color
+        colors = ['reds', 'greens', 'yellows']
+
+        for c in colors:
+            im = PILImage.new(
+                'RGB',
+                (150, 150),
+                tuple(int(c * 255) for c in colorsys.hsv_to_rgb(*AddDominantColorsAttribute.PALETTE[c][0])))
+
+            image = Image('tmp.jpg', pathlib.Path('tmp.jpg'))
+            image.pil_object = im
+
+            transform(image)
+            self.assertEqual(len(image.attributes['dominant_color_names']), 1)
+            self.assertEqual(image.attributes['dominant_color_names'][0], c)
+
+        # two colors
+        colors = [
+            ('reds', 'greens'),
+            ('yellows', 'greens')
+        ]
+
+        for c1, c2 in colors:
+            im = PILImage.new(
+                'RGB',
+                (150, 150),
+                tuple(int(c * 255) for c in colorsys.hsv_to_rgb(*AddDominantColorsAttribute.PALETTE[c1][0])))
+
+            draw = ImageDraw.Draw(im)
+            draw.rectangle(
+                (50, 50, 100, 100),
+                fill=tuple(int(c * 255) for c in colorsys.hsv_to_rgb(*AddDominantColorsAttribute.PALETTE[c2][0])))
+
+            image = Image('tmp.jpg', pathlib.Path('tmp.jpg'))
+            image.pil_object = im
+
+            transform(image)
+            self.assertEqual(len(image.attributes['dominant_color_names']), 2)
+            self.assertIn(c1, image.attributes['dominant_color_names'])
+            self.assertIn(c2, image.attributes['dominant_color_names'])
+
+    def test_add_directory(self):
+        """Test add directory"""
+        transform = AddDirectoryNameAttribute()
+
+        for image in self.images:
+            self.assertFalse(any(a in image.attributes for a in ['parent_directory']))
+            transform(image)
+
+            self.assertEqual(image.attributes['parent_directory'], image.path.parts[-2])
+
+    def test_resize(self):
+        """Test the resize transformer"""
+
+        class Tr(BaseTransformer):
+            def __call__(self, im: Image, *args, **kwargs):
+                im.attributes['ratio'] = im.pil_object.size[0] / im.pil_object.size[1]
+                im.attributes['is_rotated'] = im.pil_object._getexif()[0x0112] in [3, 6, 8]
+
+        # transform with max_width
+        suffix = 'rs1'
+        transform = WithPIL(transformers=[Tr(), Resize(max_width=300, suffix=suffix)])
+
+        for image in self.images:
+            transform(image)
+            p = pathlib.Path(image.attributes['resized_' + suffix])
+            self.assertTrue(p.exists())
+
+            im = PILImage.open(p)
+            w = 1 if image.attributes['is_rotated'] else 0  # keep rotation
+            self.assertEqual(im.size[w], 300)
+            self.assertAlmostEqual(im.size[0] / im.size[1], image.attributes['ratio'], places=1)  # keep ratio
+
+            im.close()
+
+        # transform with max_height
+        suffix = 'rs2'
+        transform = WithPIL(transformers=[Tr(), Resize(max_height=300, suffix=suffix)])
+
+        for image in self.images:
+            transform(image)
+            p = pathlib.Path(image.attributes['resized_' + suffix])
+            self.assertTrue(p.exists())
+
+            im = PILImage.open(p)
+            h = 0 if image.attributes['is_rotated'] else 1  # keep rotation
+            self.assertEqual(im.size[h], 300)
+            self.assertAlmostEqual(im.size[0] / im.size[1], image.attributes['ratio'], places=1)  # keep ratio
+
+            im.close()
+
+        # transform with max_height
+        suffix = 'rs3'
+        transform = WithPIL(transformers=[Tr(), Resize(max_width=300, max_height=300, suffix=suffix)])
+
+        for image in self.images:
+            transform(image)
+            p = pathlib.Path(image.attributes['resized_' + suffix])
+            self.assertTrue(p.exists())
+
+            im = PILImage.open(p)
+            self.assertTrue(im.size[0] <= 300)
+            self.assertTrue(im.size[1] <= 300)
+            self.assertAlmostEqual(im.size[0] / im.size[1], image.attributes['ratio'], places=1)  # keep ratio
+
+            im.close()
+
+    def test_thumbnail(self):
+        """Test thumbnail"""
+
+        suffix = 'th'
+        sz = (300, 200)
+        transform = WithPIL(transformers=[Thumbnail(width=sz[0], height=sz[1], suffix=suffix)])
+
+        for image in self.images:
+            transform(image)
+            p = pathlib.Path(image.attributes['thumbnail_' + suffix])
+            self.assertTrue(p.exists())
+
+            im = PILImage.open(p)
+            self.assertEqual(im.size, sz)
+
+            im.close()

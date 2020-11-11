@@ -1,5 +1,5 @@
 Pillow
-colorthief
+colorthief @ git+https://github.com/Alpha200/color-thief-py.git
 Jinja2
 python-slugify
 Markdown

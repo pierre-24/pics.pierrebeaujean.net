@@ -1,5 +1,4 @@
 from typing import Callable, Iterable
-import io
 import datetime
 
 import colorsys
@@ -126,14 +125,22 @@ class Resize(BaseImageTransform):
         new_size_h = int(size[0] / size[1] * self.max_height), self.max_height
         resize = True
 
-        is_portrait = size[0] > size[1]
+        if -1 in (self.max_width, self.max_height):  # dictated by one direction (not the band!)
+            if self.max_height < 0 and size[0] > self.max_width:
+                new_size = new_size_w
+            elif self.max_width < 0 and size[1] > self.max_height:
+                new_size = new_size_h
+            else:
+                resize = False
+        else:  # dictated by both
+            is_portrait = size[0] < size[1]
 
-        if (self.max_height < 0 or is_portrait) and size[0] > self.max_width:
-            new_size = new_size_w
-        elif (self.max_width < 0 or not is_portrait) and size[1] > self.max_height:
-            new_size = new_size_h
-        else:
-            resize = False
+            if is_portrait and size[1] > self.max_height:
+                new_size = new_size_h
+            elif not is_portrait and size[0] > self.max_width:
+                new_size = new_size_w
+            else:
+                resize = False
 
         if resize:
             if exif_rotated:
@@ -250,19 +257,19 @@ class AddDominantColorsAttribute(BaseTransformer):
 
     PALETTE = {
         # RGB pure
-        'redish': (
+        'reds': (
             rgb_to_hsv(255, 0, 0),
             rgb_to_hsv(128, 0, 0),  # maroon
             rgb_to_hsv(210, 105, 30),  # brown
         ),
-        'greenish': (
+        'greens': (
             rgb_to_hsv(0, 255, 0),
             rgb_to_hsv(0, 128, 0),  # dark green
             rgb_to_hsv(128, 128, 0),  # olive
             rgb_to_hsv(0, 255, 128),  # spring green
             rgb_to_hsv(75, 0, 130),  # indigo
         ),
-        'blueish': (
+        'blues': (
             rgb_to_hsv(0, 0, 255),
             rgb_to_hsv(0, 255, 255),  # cyan
             rgb_to_hsv(0, 0, 128),  # navy
@@ -270,22 +277,24 @@ class AddDominantColorsAttribute(BaseTransformer):
             rgb_to_hsv(64, 224, 208),  # turquoise
             rgb_to_hsv(70, 100, 180),  # deep blue
         ),
-        'grayish': (
+        'grays': (
             rgb_to_hsv(128, 128, 128),
             rgb_to_hsv(75, 75, 75),
             rgb_to_hsv(75, 75, 75),
         ),
-        'pink': (
-            rgb_to_hsv(255, 0, 255),
+        'pinks': (
+            rgb_to_hsv(255, 0, 255),  # magenta, in fact
             rgb_to_hsv(255, 0, 128),  # deep pink
             rgb_to_hsv(128, 0, 128),  # purple
+            rgb_to_hsv(255, 128, 255),  # pale purple
         ),
         # few extra colors:
         'black': (
             rgb_to_hsv(0, 0, 0),
         ),
-        'yellow': (
+        'yellows': (
             rgb_to_hsv(255, 255, 0),
+            rgb_to_hsv(128, 128, 0),  # "dark yellow"
         ),
         'white': (
             rgb_to_hsv(255, 255, 255),
@@ -297,16 +306,16 @@ class AddDominantColorsAttribute(BaseTransformer):
 
     def __init__(
             self,
-            color_count: int = 10,
-            reduced_to: int = 5,
-            quality: int = 5,
+            color_count: int = 15,
+            threshold: float = .01,
+            quality: int = 3,
             color_source: dict = PALETTE,
-            im_size: int = 250):
+            im_size: int = 150):
         super().__init__()
 
         self.color_count = color_count
         self.quality = quality
-        self.reduce_to = reduced_to
+        self.threshold = threshold
         self.color_source = color_source
         self.im_size = im_size
 
@@ -325,12 +334,10 @@ class AddDominantColorsAttribute(BaseTransformer):
         sz_dim = (int(self.im_size * ratio), self.im_size) if ratio < 1 else (self.im_size, int(self.im_size / ratio))
 
         im = file.pil_object.resize(sz_dim)
-        f = io.BytesIO()
-        im.save(f, 'JPEG')
+        colors = ColorThief(im).get_palette(
+            color_count=self.color_count, quality=self.quality, get_dominance=True)
 
-        palette = ColorThief(f).get_palette(
-            color_count=self.color_count, quality=self.quality)[:self.reduce_to]
-
+        palette = [c['color'] for c in colors if c['dominance'] > self.threshold]
         dominants = list((c, self._find_closest(*c)) for c in palette)
         file.attributes['dominant_color_names'] = list(set(c[1] for c in dominants))
         file.attributes['dominant_colors'] = ['#{:02X}{:02X}{:02X}'.format(*c[0]) for c in dominants]
