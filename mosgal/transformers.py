@@ -202,7 +202,10 @@ class Thumbnail(BaseImageTransform):
         return image.crop(crop)
 
 
-class AddExifAttributes:
+rev_exif_tags = dict((b, a) for a, b in ExifTags.TAGS.items())
+
+
+class AddExifAttributes(BaseTransformer):
     """Add some EXIF data to attributes
     """
 
@@ -211,14 +214,17 @@ class AddExifAttributes:
     ]
 
     def __init__(self, which: Iterable[str] = EXIF_TAGS):
+        super().__init__()
         self.which = which
 
     def __call__(self, file: Image, *args, **kwargs) -> None:
-        data = {
-            ExifTags.TAGS[k]: float(v) if type(v) is IFDRational else v
-            for k, v in file.pil_object.getexif().items()
-            if k in ExifTags.TAGS and ExifTags.TAGS[k] in self.which
-        }
+        exifs = file.pil_object.getexif()
+        data = {}
+
+        for t in self.which:
+            if rev_exif_tags[t] in exifs:
+                v = exifs[rev_exif_tags[t]]
+                data[t] = float(v) if type(v) is IFDRational else v
 
         exposure = '{:n}s'.format(
             data['ExposureTime']) if data['ExposureTime'] > 1 else '1/{:n}s'.format(1 / data['ExposureTime'])
@@ -316,7 +322,7 @@ class AddDominantColorsAttribute(BaseTransformer):
 
         sz = file.pil_object.size
         ratio = sz[0] / sz[1]
-        sz_dim = (int(self.im_size * ratio), self.im_size) if ratio < 1 else (self.im_size, int(self.im_size/ratio))
+        sz_dim = (int(self.im_size * ratio), self.im_size) if ratio < 1 else (self.im_size, int(self.im_size / ratio))
 
         im = file.pil_object.resize(sz_dim)
         f = io.BytesIO()
@@ -330,7 +336,7 @@ class AddDominantColorsAttribute(BaseTransformer):
         file.attributes['dominant_colors'] = ['#{:02X}{:02X}{:02X}'.format(*c[0]) for c in dominants]
 
 
-class AddDirectoryNameAttribute:
+class AddDirectoryNameAttribute(BaseTransformer):
     """Add the parent directory as an attribute (``parent_directory``)
     """
 
@@ -338,32 +344,40 @@ class AddDirectoryNameAttribute:
         file.attributes['parent_directory'] = file.path.parts[-2]
 
 
-class AddMonthYearAttribute:
+class AddMonthYearAttribute(BaseTransformer):
     """
     Add the date taken (``date_taken`` attribute) from the ``DateTimeOriginal`` EXIF tag,
     and extract a ``month_year`` attribute out of it.
     """
 
+    def __init__(self, fmt: str = '%B %Y'):
+        super().__init__()
+        self.format = fmt
+
     def __call__(self, file: Image, *args, **kwargs) -> None:
         dt = file.pil_object.getexif()[0x9003]
         file.attributes['date_taken'] = dt
-        file.attributes['month_year'] = datetime.datetime.strptime(dt, '%Y:%m:%d %H:%M:%S').strftime('%B %Y')
+        file.attributes['month_year'] = datetime.datetime.strptime(dt, '%Y:%m:%d %H:%M:%S').strftime(self.format)
 
 
-class AddFocalClassAttribute:
+class AddFocalClassAttribute(BaseTransformer):
     """Add a ``focal_class`` attribute, that cast the (35mm film equivalent) focal length into a
     "large" (<= 40), "normal" (40-100) or "zoom" (>= 100) class.
     """
 
-    classes = {
+    CLASSES = {
         'large': (0, 40),
         'normal': (40, 100),
         'zoom': (100, 5000)
     }
 
+    def __init__(self, classes: dict = CLASSES):
+        super().__init__()
+        self.classes = classes
+
     def __call__(self, file: Image, *args, **kwargs) -> None:
         f_length = file.pil_object.getexif()[0xA405]
 
-        for c, l in self.classes:
+        for c, l in self.classes.items():
             if l[0] <= f_length <= l[1]:
                 file.attributes['focal_class'] = c

@@ -3,7 +3,7 @@ from typing import Iterable, Union
 from PIL import Image as PILImage
 import re
 
-from mosgal.base_models import BaseFile
+from mosgal.base_models import BaseFile, BaseSeeker
 
 
 class Image(BaseFile):
@@ -31,17 +31,19 @@ class Image(BaseFile):
         return self.pil_object is None
 
 
-class ImageSeeker:
+class ImageSeeker(BaseSeeker):
     """
     Seek for files in a given directory (and all subdirectories), and select them based on their extension
     """
 
     def __init__(self, directory: pathlib.Path, extensions: Iterable[str] = (), exclude: Iterable[str] = ()):
+        super().__init__()
+
         self.directory = directory
         self.extensions = extensions
         self.exclude = exclude
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, *args, **kwargs) -> Iterable[Image]:
         r = re.compile(r'.*\.({})'.format('|'.join(self.extensions)))
 
         for fname in self.directory.glob('**/*.*'):

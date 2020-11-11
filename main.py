@@ -91,10 +91,7 @@ if __name__ == '__main__':
             AttributeClassifier('parent_directory', name='Album'),
             AttributeClassifier('month_year', name='Date'),
             AttributeClassifier('focal_class', name='Focal'),
-            AttributeClassifier(
-                'dominant_color_names',
-                name='Colors',
-            )
+            AttributeClassifier('dominant_color_names', name='Colors')
         ],
         characterizers=[
             SortElements('date_taken'),

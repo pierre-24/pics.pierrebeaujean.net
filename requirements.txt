@@ -3,3 +3,6 @@ colorthief
 Jinja2
 python-slugify
 Markdown
+flake8
+flake8-quotes
+autopep8

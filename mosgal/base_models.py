@@ -168,4 +168,3 @@ class BasePublisher:
 
         for write in self.writers:
             write(collections, self.destination)
-
