@@ -30,6 +30,6 @@ jobs:
     - name: Lint
       run: |
         make lint
-    #- name: Run
-    #  run: |
-    #    make gen
+    - name: Run
+      run: |
+        make tests

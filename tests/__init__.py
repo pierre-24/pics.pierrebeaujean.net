@@ -4,7 +4,7 @@ import tempfile
 import shutil
 
 
-class MosgalTestCase(unittest.TestCase):
+class Mosgal2TestCase(unittest.TestCase):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
