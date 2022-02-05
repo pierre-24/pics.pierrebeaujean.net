@@ -31,7 +31,12 @@ class LibraryTests(Mosgal2TestCase):
         self.assertEqual(len(matched), 1)
         self.assertEqual(matched[0], self.pic1)
 
-        # select using filters
+        # select using filters (with operators overloading)
         matched = self.library.select(a=filters.Is(1) | filters.Is(3), b=1)
+        self.assertEqual(len(matched), 1)
+        self.assertEqual(matched[0], self.pic1)
+
+        # select using raw filter
+        matched = self.library.select(filters.Is(1, 'a') & filters.Is(1, 'b'))
         self.assertEqual(len(matched), 1)
         self.assertEqual(matched[0], self.pic1)

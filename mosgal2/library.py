@@ -28,9 +28,15 @@ class Library:
 
         yaml.dump(data, fp, Dumper=yaml.Dumper)
 
-    def select(self, **kwargs) -> List[Picture]:
+    def select(self, *args, **kwargs) -> List[Picture]:
 
         fltrs = []
+
+        for val in args:
+            if not issubclass(type(val), filters.Filter):
+                raise TypeError(type(val))
+
+            fltrs.append(val)
 
         for key, val in kwargs.items():
             if issubclass(type(val), filters.Filter):
@@ -40,6 +46,9 @@ class Library:
             else:
                 fltrs.append(filters.Is(val, key))
 
-        request = filters.And(fltrs)
+        if len(fltrs) > 1:
+            request = filters.And(fltrs)
+        else:
+            request = fltrs[0]
 
         return list(filter(request, self.data.values()))
