@@ -9,7 +9,7 @@ help:
 	@echo "  lint                        to lint backend code (flake8)"
 
 init:
-	pip3 install --upgrade -r requirements.txt
+	pip-sync
 
 gen:
 	python3 ./main.py

@@ -1,0 +1,9 @@
+Pillow
+colorthief @ git+https://github.com/Alpha200/color-thief-py.git
+Jinja2
+python-slugify
+Markdown
+flake8
+flake8-quotes
+autopep8
+pyaml
