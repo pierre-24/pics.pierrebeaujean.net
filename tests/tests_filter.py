@@ -32,9 +32,18 @@ class FilterTests(Mosgal2TestCase):
         matched = self.filter(filters.Or([filters.Is(1, 'a'), filters.Is(1, 'b')]), self.pics)
         self.assertEqual(len(matched), 3)
 
+        # use overloading
+        matched = self.filter(filters.Is(1, 'a') | filters.Is(1, 'b'), self.pics)
+        self.assertEqual(len(matched), 3)
+
     def test_and_filter(self):
         # match one
         matched = self.filter(filters.And([filters.Is(1, 'a'), filters.Is(1, 'b')]), self.pics)
+        self.assertEqual(len(matched), 1)
+        self.assertEqual(matched[0], self.pic1)
+
+        # use overloading
+        matched = self.filter(filters.Is(1, 'a') & filters.Is(1, 'b'), self.pics)
         self.assertEqual(len(matched), 1)
         self.assertEqual(matched[0], self.pic1)
 

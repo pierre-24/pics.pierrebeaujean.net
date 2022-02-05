@@ -33,8 +33,9 @@ class Library:
         fltrs = []
 
         for key, val in kwargs.items():
-            if issubclass(type(val), filters.Data):
-                val.field = key
+            if issubclass(type(val), filters.Filter):
+                if issubclass(type(val), filters.Data) or type(val) in [filters.Or, filters.And]:
+                    val.set_field(key)
                 fltrs.append(val)
             else:
                 fltrs.append(filters.Is(val, key))

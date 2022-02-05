@@ -9,6 +9,12 @@ class Filter:
     def __call__(self, item) -> bool:
         return self.select(item)
 
+    def __or__(self, other: 'Filter') -> 'Or':
+        return Or([self, other])
+
+    def __and__(self, other: 'Filter') -> 'And':
+        return And([self, other])
+
 
 class And(Filter):
     def __init__(self, filters: List[Filter]):
@@ -16,6 +22,11 @@ class And(Filter):
 
     def select(self, item: Picture) -> bool:
         return all(f(item) for f in self.filters)
+
+    def set_field(self, field: str):
+        for i in self.filters:
+            if issubclass(type(i), Data) or type(i) in [And, Or]:
+                i.set_field(field)
 
 
 class Or(And):
@@ -35,6 +46,9 @@ class Data(Filter):
 
     def select_on_data(self, data) -> bool:
         raise NotImplementedError()
+
+    def set_field(self, field: str):
+        self.field = field
 
 
 class Is(Data):
