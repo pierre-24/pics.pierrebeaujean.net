@@ -15,7 +15,7 @@ gen:
 	python3 ./main.py
 
 lint:
-	flake8 mosgal tests --max-line-length=120 --ignore=N802
+	flake8 mosgal2 tests --max-line-length=120 --ignore=N802
 
 tests:
 	python -m unittest discover -s tests

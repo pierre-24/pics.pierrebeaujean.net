@@ -6,3 +6,4 @@ Markdown
 flake8
 flake8-quotes
 autopep8
+pyaml
