@@ -24,7 +24,7 @@ class Or(And):
 
 
 class Data(Filter):
-    def __init__(self, field: str):
+    def __init__(self, field: str = None):
         self.field = field
 
     def select(self, item: Picture) -> bool:
@@ -38,9 +38,18 @@ class Data(Filter):
 
 
 class Is(Data):
-    def __init__(self, field, value):
+    def __init__(self, value, field: str = None):
         super().__init__(field)
         self.value = value
 
     def select_on_data(self, data) -> bool:
         return data == self.value
+
+
+class In(Data):
+    def __init__(self, values: list, field: str = None):
+        super().__init__(field)
+        self.values = values
+
+    def select_on_data(self, data) -> bool:
+        return data in self.values

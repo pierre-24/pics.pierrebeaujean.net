@@ -2,6 +2,7 @@ import yaml
 from typing import Dict, TextIO, List
 
 from mosgal2.picture import Picture
+from mosgal2 import filters
 
 
 class Library:
@@ -28,4 +29,16 @@ class Library:
         yaml.dump(data, fp, Dumper=yaml.Dumper)
 
     def select(self, **kwargs) -> List[Picture]:
-        return []
+
+        fltrs = []
+
+        for key, val in kwargs.items():
+            if issubclass(type(val), filters.Data):
+                val.field = key
+                fltrs.append(val)
+            else:
+                fltrs.append(filters.Is(val, key))
+
+        request = filters.And(fltrs)
+
+        return list(filter(request, self.data.values()))
