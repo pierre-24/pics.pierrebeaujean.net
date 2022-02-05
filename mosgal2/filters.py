@@ -18,7 +18,13 @@ class Filter:
 
 class And(Filter):
     def __init__(self, filters: List[Filter]):
-        self.filters = filters
+        self.filters = []
+
+        for i in filters:
+            if type(i) is type(self):
+                self.filters.extend(i.filters)
+            else:
+                self.filters.append(i)
 
     def select(self, item: Picture) -> bool:
         return all(f(item) for f in self.filters)

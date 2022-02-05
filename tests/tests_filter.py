@@ -14,7 +14,8 @@ class FilterTests(Mosgal2TestCase):
 
         self.pics = [self.pic1, self.pic2, self.pic3]
 
-    def filter(self, fltr: filters.Filter, pics: list) -> list:
+    @staticmethod
+    def filter(fltr: filters.Filter, pics: list) -> list:
         return list(filter(fltr, pics))
 
     def test_is_filter(self):
@@ -60,3 +61,24 @@ class FilterTests(Mosgal2TestCase):
         # match none
         matched = self.filter(filters.In([4, 5], 'a'), self.pics)
         self.assertEqual(len(matched), 0)
+
+    def test_simplify(self):
+        i1 = filters.Is(1, 'a')
+        i2 = filters.Is(1, 'b')
+        i3 = filters.Is(1, 'c')
+
+        # check simplification of "and"
+        request = i1 & (i2 & i3)
+        self.assertEqual(len(request.filters), 3)
+        self.assertIs(type(request), filters.And)
+
+        # check simplification of "or"
+        request = i1 | (i2 | i3)
+        self.assertEqual(len(request.filters), 3)
+        self.assertIs(type(request), filters.Or)
+
+        # do not simplify if mixed
+        request = i1 & (i2 | i3)
+        self.assertEqual(len(request.filters), 2)
+        self.assertIs(type(request), filters.And)
+        self.assertIs(type(request.filters[1]), filters.Or)
