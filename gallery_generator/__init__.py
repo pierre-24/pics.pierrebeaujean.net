@@ -1,5 +1,5 @@
 """
-MOSGal: My Own Gallery (generator)
+Generate a static website with a gallery
 """
 
 __version__ = '0.1'
