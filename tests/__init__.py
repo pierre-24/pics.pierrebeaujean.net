@@ -3,14 +3,22 @@ import pathlib
 import tempfile
 import shutil
 
+from sqlalchemy import create_engine
+from gallery_generator.models import Base
 
-class MosgalTestCase(unittest.TestCase):
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+class GCTestCase(unittest.TestCase):
 
+    def setUp(self) -> None:
         self.tests_files_directory = pathlib.Path(pathlib.Path(__file__).parent, 'tests_files')
         self.temporary_directory = pathlib.Path(tempfile.mkdtemp())
+
+        # use temporary database
+        self.db_file = 'sqlite:///{}/temp.db'.format(self.temporary_directory)
+        self.engine = create_engine(self.db_file, echo=True, future=True)
+
+        # create schema
+        Base.metadata.create_all(self.engine)
 
     def tearDown(self):
         shutil.rmtree(self.temporary_directory)
