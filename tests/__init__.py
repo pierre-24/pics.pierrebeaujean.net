@@ -15,7 +15,7 @@ class GCTestCase(unittest.TestCase):
 
         # use temporary database
         self.db_file = 'sqlite:///{}/temp.db'.format(self.temporary_directory)
-        self.engine = create_engine(self.db_file, echo=True, future=True)
+        self.engine = create_engine(self.db_file, future=True)
 
         # create schema
         Base.metadata.create_all(self.engine)

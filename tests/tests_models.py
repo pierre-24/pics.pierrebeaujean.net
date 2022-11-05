@@ -3,7 +3,7 @@ from tests import GCTestCase
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from gallery_generator.models import Category, Tag
+from gallery_generator.models import Category, Tag, Picture
 
 
 class ModelsTestCase(GCTestCase):
@@ -23,8 +23,16 @@ class ModelsTestCase(GCTestCase):
             session.add(t2)
             session.commit()
 
+            pic = Picture.create('/tmp', (158, 15))
+
+            pic.tags.append(t1)
+
+            session.add(pic)
+            session.commit()
+
     def test_create_models(self):
 
         with Session(self.engine) as session:
             print(session.execute(select(Category)).all())
             print(session.execute(select(Category)).first()[0].tags)
+            print(session.execute(select(Picture)).first()[0].tags)
