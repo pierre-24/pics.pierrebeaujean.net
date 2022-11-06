@@ -48,9 +48,10 @@ class TagManager(metaclass=TaggingMeta):
 
     TAG_DIRECTORY = 'tags'
 
-    def __init__(self, root: pathlib.Path, session: Session):
+    def __init__(self, root: pathlib.Path, session: Session, verbose: bool = False):
         self.root = root
         self.session = session
+        self.verbose = verbose
 
         self.categories = {}
         self.tags = {}
@@ -72,6 +73,9 @@ class TagManager(metaclass=TaggingMeta):
         if not path.exists():
             path.mkdir()
 
+        if self.verbose:
+            print(' [NEW CATEGORY {}]'.format(name), end='')
+
         return category
 
     def _create_tag(self, category: Category, name: str) -> Tag:
@@ -88,6 +92,9 @@ class TagManager(metaclass=TaggingMeta):
         if not path.exists():
             with path.open('w') as f:
                 f.write('# {}'.format(name))
+
+        if self.verbose:
+            print(' [NEW TAG {}/{}]'.format(category.name, name), end='')
 
         return tag
 
