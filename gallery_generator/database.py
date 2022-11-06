@@ -43,6 +43,9 @@ class Category(BaseModel):
             repr(self.id), repr(self.name)
         )
 
+    def get_directory(self):
+        return pathlib.Path(self.name)
+
 
 tag_picture_at = Table(
     'tag_picture_at',
@@ -56,7 +59,9 @@ class Tag(BaseModel):
     __tablename__ = 'tag'
 
     name = Column(String)
-    description = Column(String)
+
+    display_name: str = None
+    description: str = None
 
     category_id = Column(Integer, ForeignKey('category.id'))
     category = relationship('Category', back_populates='tags')
@@ -66,19 +71,30 @@ class Tag(BaseModel):
     )
 
     @classmethod
-    def create(cls, category: Category, name: str, description: str = ''):
+    def create(cls, category: Category, name: str):
         o = cls()
 
         o.category_id = category.id
         o.name = name
-        o.description = description
 
         return o
 
     def __repr__(self):
-        return 'Tag(id={}, name={}, description={}, category_id={})'.format(
-            repr(self.id), repr(self.name), repr(self.description), repr(self.category_id)
+        return 'Tag(id={}, name={}, category_id={})'.format(
+            repr(self.id), repr(self.name), repr(self.category_id)
         )
+
+    def get_file(self):
+        """Get path to the file where the info are stored
+        """
+
+        return self.category.get_directory() / '{}.md'.format(self.name)
+
+    def update_from_file(self, tag_directory: pathlib.Path):
+        """Read `tag_directory / self.get_file()` and update `display_name` and `description` from it
+        """
+
+        raise NotImplementedError()
 
 
 class Picture(BaseModel):
@@ -97,6 +113,7 @@ class Picture(BaseModel):
     exif_model = Column(String)
     exif_iso_speed = Column(Integer)
     exif_focal_length = Column(Float)
+    exif_orientation = Column(Integer)
 
     tags = relationship(
         'Tag', secondary=tag_picture_at, back_populates='pictures'
@@ -113,7 +130,8 @@ class Picture(BaseModel):
 
     def get_exif_info(self) -> dict:
         info = [
-            'exposure_time', 'f_number', 'make', 'model', 'iso_speed', 'focal_length', 'datetime_original'
+            'exposure_time', 'f_number', 'make', 'model', 'iso_speed', 'focal_length', 'datetime_original',
+            'orientation'
         ]
 
         return dict((a, b) for a, b in ((i, getattr(self, 'exif_{}'.format(i))) for i in info))

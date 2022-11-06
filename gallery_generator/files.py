@@ -7,8 +7,6 @@ CONFIG_DIR_NAME = '.gallery'
 
 CONFIG_DIRS = [
     '{}'.format(CONFIG_DIR_NAME),        # dir itself
-
-    '{}/tags'.format(CONFIG_DIR_NAME),   # tags
     '{}/pages'.format(CONFIG_DIR_NAME),  # extra pages
 ]
 
@@ -17,6 +15,11 @@ def create_config_dirs(root: pathlib.Path) -> None:
     """Create the required (sub)directories if they don't exist, following `CONFIG_DIRS`.
     """
 
+    # add tags
+    from gallery_generator.tag import TagManager
+    CONFIG_DIRS.append('{}/{}'.format(CONFIG_DIR_NAME, TagManager.TAG_DIRECTORY))
+
+    # create dirs
     for dir in CONFIG_DIRS:
         path = root / dir
         if not path.exists():
