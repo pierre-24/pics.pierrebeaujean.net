@@ -21,6 +21,18 @@ def command_init(root: pathlib.Path, db: GalleryDatabase):
     db.create_schema()
 
 
+def command_crawl(root: pathlib.Path, db: GalleryDatabase):
+    """Go through all accessible pictures in the root directory, then for each of them
+
+    - check if they are already in the database, and if not,
+    - add them to the database, gathering the infos
+    - tag them accordingly, creating tags if required
+    """
+
+    if not db.exists():
+        raise FileNotFoundError('database file `{}` does not exists'.format(db.path))
+
+
 def main():
     parser = argparse.ArgumentParser()
 
@@ -36,16 +48,17 @@ def main():
 
     # check path
     if not args.source.exists():
-        return exit_failure('source `{}` does not exists'.format(args.source))
+        return exit_failure('source directory `{}` does not exists'.format(args.source))
 
     db = GalleryDatabase(args.source)
 
-    # init
-    if args.init:
-        try:
+    try:
+        if args.init:
             command_init(args.source, db)
-        except Exception as e:
-            return exit_failure(str(e))
+        elif args.crawl:
+            command_crawl(args.source, db)
+    except Exception as e:
+        return exit_failure('Error while executing command: {}'.format(e))
 
 
 if __name__ == '__main__':

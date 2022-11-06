@@ -21,12 +21,11 @@ class GCTestCase(unittest.TestCase):
     def tearDown(self):
         shutil.rmtree(self.root)
 
-    def copy_to_temporary_directory(self, file_in_test_dir: str, new_name: str = ''):
+    def copy_to_temporary_directory(self, file_in_test_dir: str, new_name: str = '') -> pathlib.Path:
         """Copy the content of a file from the ``test_file_directory`` to the temporary directory
 
         :param file_in_test_dir: path to the file to copy
         :param new_name: the new name of the file in the temporary directory (if blank, the one from path is used)
-        :rtype: str
         """
 
         path_in_test = pathlib.Path(self.tests_files_directory, file_in_test_dir)
