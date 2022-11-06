@@ -1,9 +1,12 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Float, Table
+import pathlib
+
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Float, Table, create_engine
 from sqlalchemy.sql import func
-from sqlalchemy.orm import declarative_base
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import declarative_base, relationship, Session
 
 from typing import Tuple
+
+from gallery_generator.files import CONFIG_DIR_NAME
 
 Base = declarative_base()
 
@@ -108,3 +111,20 @@ class Thumbnail(BaseModel):
 
     picture_id = Column(Integer, ForeignKey('picture.id'))
     picture = relationship('Picture')
+
+
+class GalleryDatabase:
+
+    DATABASE_NAME = 'gallery.sqlite3'
+
+    def __init__(self, root: pathlib.Path):
+        self.db_file = 'sqlite:///{}/{}/{}'.format(root, CONFIG_DIR_NAME, self.DATABASE_NAME)
+
+    def _engine(self):
+        return create_engine(self.db_file)
+
+    def create_schema(self):
+        Base.metadata.create_all(self._engine())
+
+    def session(self) -> Session:
+        return Session(self._engine())

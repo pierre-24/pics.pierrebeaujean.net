@@ -1,17 +1,18 @@
 from tests import GCTestCase
 
 from sqlalchemy import select
-from sqlalchemy.orm import Session
 
-from gallery_generator.models import Category, Tag, Picture
+from gallery_generator.database import Category, Tag, Picture
 
 
 class ModelsTestCase(GCTestCase):
+    """To be removed in the future, just there to check stuffs
+    """
 
     def setUp(self) -> None:
         super().setUp()
 
-        with Session(self.engine) as session:
+        with self.db.session() as session:
             c = Category.create('Test')
             session.add(c)
             session.commit()
@@ -32,7 +33,7 @@ class ModelsTestCase(GCTestCase):
 
     def test_create_models(self):
 
-        with Session(self.engine) as session:
+        with self.db.session() as session:
             print(session.execute(select(Category)).all())
             print(session.execute(select(Category)).first()[0].tags)
             print(session.execute(select(Picture)).first()[0].tags)

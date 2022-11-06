@@ -1,6 +1,5 @@
 # pics.pierrebeaujean.net
 
-
 ## What ?
 
 Yet another gallery (generator) in order to share the stuffs I made with my camera.
