@@ -136,6 +136,9 @@ class Picture(BaseModel):
 
         return dict((a, b) for a, b in ((i, getattr(self, 'exif_{}'.format(i))) for i in info))
 
+    def __repr__(self):
+        return 'Picture(id={},path={})'.format(repr(self.id), repr(self.path))
+
 
 class Thumbnail(BaseModel):
     __tablename__ = 'thumbnail'

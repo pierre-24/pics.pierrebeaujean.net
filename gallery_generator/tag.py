@@ -110,7 +110,7 @@ class TagManager(metaclass=TaggingMeta):
         try:
             tag = self.tags[category_name][name]
         except KeyError:
-            tag = self.session.execute(Tag.select().where(Tag.category_id == category.id and Tag.name == name)).scalar()
+            tag = self.session.execute(Tag.select().where(Tag.category_id == category.id, Tag.name == name)).scalar()
             if not tag:
                 tag = self._create_tag(category, name)
             self.tags[category_name][name] = tag

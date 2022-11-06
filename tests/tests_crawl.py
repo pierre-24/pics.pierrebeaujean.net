@@ -2,8 +2,9 @@ from tests import GCTestCase
 
 from gallery_generator.files import seek_pictures, PICTURE_EXCLUDE_DIRS
 from gallery_generator.picture import create_picture_object
-from gallery_generator.database import Tag, Category
+from gallery_generator.database import Tag, Category, Picture
 from gallery_generator.tag import TagManager
+from gallery_generator.script import command_crawl
 
 
 class CrawlTestCase(GCTestCase):
@@ -97,3 +98,29 @@ class CrawlTestCase(GCTestCase):
             for c in categories:
                 path = tag_manager.get_tag_directory() / c.tags[0].get_file()
                 self.assertTrue(path.exists())
+
+    def test_command_crawl(self):
+        with self.db.session() as session:
+            self.assertEqual(session.execute(Picture.count()).scalar_one(), 0)
+            self.assertEqual(session.execute(Category.count()).scalar_one(), 0)
+            self.assertEqual(session.execute(Tag.count()).scalar_one(), 0)
+
+        command_crawl(self.root, self.db)
+
+        with self.db.session() as session:
+            self.assertEqual(session.execute(Picture.count()).scalar_one(), 3)
+            self.assertEqual(session.execute(Tag.count()).scalar_one(), 7)
+
+            categories = session.execute(Category.select()).scalars().all()
+            self.assertEqual(len(categories), 3)
+
+            c_album = next(filter(lambda x: x.name == 'Album', categories))
+            self.assertIsNotNone(c_album)
+            c_date = next(filter(lambda x: x.name == 'Date', categories))
+            self.assertIsNotNone(c_date)
+            c_focal = next(filter(lambda x: x.name == 'Focal', categories))
+            self.assertIsNotNone(c_focal)
+
+            self.assertEqual(len(c_album.tags), len(self.dirs))
+            self.assertEqual(len(c_date.tags), 3)  # May, July and September 2022
+            self.assertEqual(len(c_focal.tags), 2)  # Normal and Large

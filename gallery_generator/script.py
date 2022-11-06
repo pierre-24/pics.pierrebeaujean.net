@@ -3,7 +3,10 @@ import pathlib
 import sys
 
 from gallery_generator.files import create_config_dirs
-from gallery_generator.database import GalleryDatabase
+from gallery_generator.database import GalleryDatabase, Picture
+from gallery_generator.files import seek_pictures
+from gallery_generator.tag import TagManager
+from gallery_generator.picture import create_picture_object
 
 
 def exit_failure(msg: str, code: int = -1):
@@ -34,6 +37,15 @@ def command_crawl(root: pathlib.Path, db: GalleryDatabase):
 
     if not db.exists():
         raise FileNotFoundError('database file `{}` does not exists'.format(db.path))
+
+    with db.session() as session:
+        tag_manager = TagManager(root, session)
+        for path in seek_pictures(root):
+            if session.execute(Picture.count().where(Picture.path == str(path))).scalar_one() == 0:
+                picture = create_picture_object(root, path)
+                tag_manager.tag_picture(picture)
+                session.add(picture)
+                session.commit()
 
 
 def main():
