@@ -1,7 +1,6 @@
 import pathlib
 
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Float, Table, create_engine
-from sqlalchemy.sql import func
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Float, Table, create_engine, select, func
 from sqlalchemy.orm import declarative_base, relationship, Session
 
 from typing import Tuple
@@ -17,6 +16,14 @@ class BaseModel(Base):
     id = Column(Integer, primary_key=True)
     date_obj_created = Column(DateTime, default=func.current_timestamp())
     date_obj_modified = Column(DateTime, default=func.current_timestamp(), onupdate=func.current_timestamp())
+
+    @classmethod
+    def select(cls):
+        return select(cls)
+
+    @classmethod
+    def count(cls):
+        return select(func.count()).select_from(cls)
 
 
 class Category(BaseModel):
@@ -81,26 +88,35 @@ class Picture(BaseModel):
 
     width = Column(Integer)
     height = Column(Integer)
+    size = Column(Integer)
 
-    exif_DateTimeOriginal = Column(DateTime)
-    exif_ExposureTime = Column(Float)
-    exif_FNumber = Column(Float)
-    exif_Make = Column(String)
-    exif_Model = Column(String)
-    exif_ISOSpeedRatings = Column(Integer)
-    exif_FocalLength = Column(Float)
+    exif_datetime_original = Column(DateTime)
+    exif_exposure_time = Column(Float)
+    exif_f_number = Column(Float)
+    exif_make = Column(String)
+    exif_model = Column(String)
+    exif_iso_speed = Column(Integer)
+    exif_focal_length = Column(Float)
 
     tags = relationship(
         'Tag', secondary=tag_picture_at, back_populates='pictures'
     )
 
     @classmethod
-    def create(cls, path: str, dimension: Tuple[int, int]):
+    def create(cls, path: str, dimension: Tuple[int, int], size: int):
         o = cls()
         o.path = path
         o.width, o.height = dimension
+        o.size = size
 
         return o
+
+    def get_exif_info(self) -> dict:
+        info = [
+            'exposure_time', 'f_number', 'make', 'model', 'iso_speed', 'focal_length', 'datetime_original'
+        ]
+
+        return dict((a, b) for a, b in ((i, getattr(self, 'exif_{}'.format(i))) for i in info))
 
 
 class Thumbnail(BaseModel):

@@ -1,7 +1,5 @@
 from tests import GCTestCase
 
-from sqlalchemy import select
-
 from gallery_generator.database import Category, Tag, Picture
 
 
@@ -24,7 +22,7 @@ class ModelsTestCase(GCTestCase):
             session.add(t2)
             session.commit()
 
-            pic = Picture.create('/tmp', (158, 15))
+            pic = Picture.create('/tmp', (158, 15), 5)
 
             pic.tags.append(t1)
 
@@ -34,6 +32,5 @@ class ModelsTestCase(GCTestCase):
     def test_create_models(self):
 
         with self.db.session() as session:
-            print(session.execute(select(Category)).all())
-            print(session.execute(select(Category)).first()[0].tags)
-            print(session.execute(select(Picture)).first()[0].tags)
+            print(session.execute(Category.select()).scalar_one().tags)
+            print(session.execute(Category.select().where(Category.id.is_(1))).scalar())

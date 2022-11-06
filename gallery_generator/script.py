@@ -17,7 +17,10 @@ def command_init(root: pathlib.Path, db: GalleryDatabase):
     # create config dirs
     create_config_dirs(root)
 
-    # create schema
+    # remove existing db and create a new one
+    if db.path.exists():
+        db.path.unlink()
+
     db.create_schema()
 
 

@@ -1,6 +1,8 @@
 from tests import GCTestCase
 
 from gallery_generator.files import seek_pictures, PICTURE_EXCLUDE_DIRS
+from gallery_generator.picture import create_picture_object
+from gallery_generator.database import Picture
 
 
 class CrawlTestCase(GCTestCase):
@@ -39,3 +41,26 @@ class CrawlTestCase(GCTestCase):
         self.assertNotIn(self.pic1.relative_to(self.root), found_pictures)
         self.assertIn(self.pic2.relative_to(self.root), found_pictures)
         self.assertNotIn(self.pic3.relative_to(self.root), found_pictures)
+
+    def test_create_picture_object_ok(self):
+        picture = create_picture_object(self.root, self.pic3.relative_to(self.root))
+        exif_info = picture.get_exif_info()
+
+        to_check = {  # those are the info from im3.JPEG
+            'model': 'NIKON D5600',
+            'f_number': 2.8,
+            'iso_speed': 360,
+            'exposure_time': 1 / 60,
+            'focal_length': 35
+        }
+
+        for k, v in to_check.items():
+            self.assertEqual(exif_info[k], v)
+
+        with self.db.session() as session:
+            self.assertEqual(session.execute(Picture.count()).scalar_one(), 0)
+
+            session.add(picture)
+            session.commit()
+
+            self.assertEqual(session.execute(Picture.count()).scalar_one(), 1)
