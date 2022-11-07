@@ -106,6 +106,26 @@ def command_crawl(root: pathlib.Path, db: GalleryDatabase, verbose: bool = False
             elif verbose:
                 print(' [DB]')
 
+    if verbose:
+        print('-' * CHAR_PER_LINE)
+        print()
+
+
+def command_update(root: pathlib.Path, db: GalleryDatabase, out=pathlib.Path, verbose: bool = False):
+    """Update/create the static website:
+    - Compile SCSS into CSS
+    - Create a page for each tag that contains an image
+    - Create index
+    - Create additional page(s)
+    """
+
+    if verbose:
+        print_title('Update phase')
+
+    if verbose:
+        print('-' * CHAR_PER_LINE)
+        print()
+
 
 def main():
     parser = argparse.ArgumentParser()
@@ -135,6 +155,8 @@ def main():
             command_init(args.source, db, args.verbose)
         elif args.crawl:
             command_crawl(args.source, db, args.verbose)
+        elif args.update:
+            command_update(args.source, db, args.update, args.verbose)
     except Exception as e:
         return exit_failure('Error while executing command: {}'.format(e))
 
