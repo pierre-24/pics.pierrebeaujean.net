@@ -15,7 +15,7 @@ class GCTestCase(unittest.TestCase):
         self.root = pathlib.Path(tempfile.mkdtemp())
         self.db = GalleryDatabase(self.root)
 
-        # create schema
+        # create schema and directories
         command_init(self.root, self.db)
 
     def tearDown(self):
