@@ -119,6 +119,8 @@ class Picture(BaseModel):
         'Tag', secondary=tag_picture_at, back_populates='pictures'
     )
 
+    thumbnails = relationship('Thumbnail')
+
     @classmethod
     def create(cls, path: str, dimension: Tuple[int, int], size: int):
         o = cls()
@@ -147,7 +149,7 @@ class Thumbnail(BaseModel):
     type = Column(String)
 
     picture_id = Column(Integer, ForeignKey('picture.id'))
-    picture = relationship('Picture')
+    picture = relationship('Picture', back_populates='thumbnails')
 
 
 class GalleryDatabase:

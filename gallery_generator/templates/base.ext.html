@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>{{ site_name }} &bullet; {% block page_title %}{% endblock %}</title>
+
+    {% block style %}
+    {% endblock %}
+</head>
+<body>
+    <nav>
+        <a href="index.html">{{ site_name }}</a>
+    </nav>
+    {% block content %}
+        <main>
+            {% block page_content %}
+            {% endblock %}
+        </main>
+
+        <footer class="footer">
+            Page generated on {{ now }}.
+        </footer>
+    {% endblock %}
+
+    {% block scripts %}
+    {% endblock %}
+</body>
+</html>

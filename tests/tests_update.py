@@ -4,7 +4,7 @@ from PIL import Image
 
 from gallery_generator.script import command_crawl
 from gallery_generator.database import Picture
-from gallery_generator.picture import ScalePicture, CropPicture
+from gallery_generator.thumbnail import ScalePicture, CropPicture
 
 
 class UpdateTestCase(GCTestCase):
