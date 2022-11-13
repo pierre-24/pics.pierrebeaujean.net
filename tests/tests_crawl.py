@@ -7,10 +7,8 @@ from gallery_generator.tag import TagManager
 from gallery_generator.script import command_crawl
 
 
-class CrawlTestCase(GCTestCase):
-    def setUp(self) -> None:
-        super().setUp()
-
+class DispatchPictureFixture:
+    def dispatch_pics(self):
         # create directories
         self.dirs = ['dir1', 'dir2']
         self.ndirs = len(self.dirs)
@@ -23,6 +21,20 @@ class CrawlTestCase(GCTestCase):
         self.pic1 = self.copy_to_temporary_directory('im1.JPEG', self.dirs[0] + '/im1.jpg')
         self.pic2 = self.copy_to_temporary_directory('im2.JPEG', self.dirs[1] + '/im2.JPG')
         self.pic3 = self.copy_to_temporary_directory('im3.JPEG', self.dirs[1] + '/im3.JPEG')
+
+    def dispatch_one_pic(self):
+        # create directory
+        self.dir = 'dir'
+        (self.root / self.dir).mkdir()
+
+        # dispatch picture in it
+        self.pic = self.copy_to_temporary_directory('im3.JPEG', self.dir + '/im3.JPEG')
+
+
+class SeekPictureTestCase(GCTestCase, DispatchPictureFixture):
+    def setUp(self) -> None:
+        super().setUp()
+        self.dispatch_pics()
 
     def test_seek_pictures_ok(self):
         found_pictures = list(seek_pictures(self.root))
@@ -44,8 +56,14 @@ class CrawlTestCase(GCTestCase):
         self.assertIn(self.pic2.relative_to(self.root), found_pictures)
         self.assertNotIn(self.pic3.relative_to(self.root), found_pictures)
 
+
+class CreatePictureTestCase(GCTestCase, DispatchPictureFixture):
+    def setUp(self) -> None:
+        super().setUp()
+        self.dispatch_one_pic()
+
     def test_create_picture_object_ok(self):
-        picture = create_picture_object(self.root, self.pic3.relative_to(self.root))
+        picture = create_picture_object(self.root, self.pic.relative_to(self.root))
 
         self.assertEqual(picture.width, 1920)
         self.assertEqual(picture.height, 1279)
@@ -64,6 +82,12 @@ class CrawlTestCase(GCTestCase):
         for k, v in to_check.items():
             self.assertEqual(exif_info[k], v)
 
+
+class TagManagerTestCase(GCTestCase, DispatchPictureFixture):
+    def setUp(self) -> None:
+        super().setUp()
+        self.dispatch_one_pic()
+
     def test_tag_manager_one_image_ok(self):
 
         with self.db.session() as session:
@@ -71,10 +95,10 @@ class CrawlTestCase(GCTestCase):
             self.assertEqual(session.execute(Category.count()).scalar_one(), 0)
             self.assertEqual(session.execute(Tag.count()).scalar_one(), 0)
 
-            # tag pic1
+            # tag pic
             tag_manager = TagManager(self.root, session)
 
-            picture = create_picture_object(self.root, self.pic1.relative_to(self.root))
+            picture = create_picture_object(self.root, self.pic.relative_to(self.root))
             tag_manager.tag_picture(picture)
 
             # 3 categories and tags are now created
@@ -90,14 +114,20 @@ class CrawlTestCase(GCTestCase):
 
             self.assertEqual(session.execute(Tag.count()).scalar_one(), 3)
 
-            self.assertEqual(c_album.tags[0].name, self.dirs[0])
-            self.assertEqual(c_date.tags[0].name, 'May 2020')
-            self.assertEqual(c_focal.tags[0].name, 'Normal')
+            self.assertEqual(c_album.tags[0].name, self.dir)
+            self.assertEqual(c_date.tags[0].name, 'September 2020')
+            self.assertEqual(c_focal.tags[0].name, 'Large')
 
             # corresponding files are also created
             for c in categories:
                 path = tag_manager.get_tag_directory() / c.tags[0].get_file()
                 self.assertTrue(path.exists())
+
+
+class CommandCrawlTestCase(GCTestCase, DispatchPictureFixture):
+    def setUp(self) -> None:
+        super().setUp()
+        self.dispatch_pics()
 
     def test_command_crawl(self):
         with self.db.session() as session:
