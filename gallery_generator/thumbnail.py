@@ -20,9 +20,13 @@ class BaseImageTransform:
         raise NotImplementedError()
 
     def get_name(self, base: str):
+        """Get the name of the thumbnail
+        """
+
         return '{}_{}.{}'.format(base, self._get_subname(), self.output_format)
 
     def transform(self, im: PILImage, *args, **kwargs) -> PILImage:
+        """Actually transform the image"""
         raise NotImplementedError()
 
     def rotate_with_tag(self, im: PILImage):
@@ -181,11 +185,13 @@ class Thumbnailer:
         self.thumb_types = thumb_types
 
     def _create_thumbnail(self, picture: Picture, ttype: str) -> Thumbnail:
+
+        # transform
         transformer: BaseImageTransform = self.thumb_types[ttype]
         name = transformer.get_name('{}_id{}'.format(pathlib.Path(picture.path).parent.name, picture.id))
-
         transformer(self.root / picture.path, self.target / self.THUMBNAIL_DIRECTORY / name)
 
+        # put in database
         thumb = Thumbnail.create(picture.id, str(self.THUMBNAIL_DIRECTORY / name), ttype)
         picture.thumbnails.append(thumb)
         self.session.add(thumb)
@@ -194,11 +200,15 @@ class Thumbnailer:
         return thumb
 
     def get_thumbnail(self, picture: Picture, ttype: str) -> Thumbnail:
+        """Get or create a thumbnail for `picture`"""
+
         if ttype not in self.thumb_types:
             raise ValueError('`{}` is not a valid thumbnail type'.format(ttype))
 
         for thumb in picture.thumbnails:
             if thumb.type == ttype:
+                if not (self.target / thumb.path).exists():  # re-create if needed
+                    self.thumb_types[ttype](self.root / picture.path, self.target / thumb.path)
                 return thumb
 
         return self._create_thumbnail(picture, ttype)

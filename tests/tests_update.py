@@ -97,3 +97,29 @@ class ThumbnailerTestCase(GCTestCase, DispatchPictureFixture):
             self.assertEqual(session.execute(Thumbnail.count()).scalar_one(), 2)
             self.assertNotEqual(thumb_large, thumb_small)
             self.assertEqual(thumb_large.type, TTYPE2)
+
+    def test_thumbnail_delete_recreate_ok(self):
+        TTYPE = 'small_square'
+
+        with self.db.make_session() as session:
+            self.assertEqual(session.execute(Picture.count()).scalar_one(), 1)
+            self.assertEqual(session.execute(Thumbnail.count()).scalar_one(), 0)
+
+            picture = session.execute(Picture.select()).scalar_one()
+
+            # generate a thumbnail
+            thumbnailer = Thumbnailer(self.root, self.target, session, thumb_types=self.thumb_types)
+            thumb_small = thumbnailer.get_thumbnail(picture, TTYPE)
+            path = self.target / thumb_small.path
+            self.assertEqual(session.execute(Thumbnail.count()).scalar_one(), 1)
+
+            self.assertTrue(path.exists())
+
+            # delete
+            path.unlink()
+            self.assertFalse(path.exists())
+
+            # request
+            thumbnailer.get_thumbnail(picture, TTYPE)
+            self.assertEqual(session.execute(Thumbnail.count()).scalar_one(), 1)
+            self.assertTrue(path.exists())
