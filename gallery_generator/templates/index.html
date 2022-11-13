@@ -6,7 +6,10 @@
         <h2>{{ category.name }}</h2>
         <ul>
         {% for tag in category.tags %}
-            <li><a href="{{ tag.get_url() }}">{{ tag.display_name }}</a></li>
+            <li><a href="{{ tag.get_url() }}">
+                <img src="/{{ thumbnailer.get_thumbnail(tag.pictures[-1], 'tag_thumbnail').path }}" />
+                {{ tag.display_name }}
+            </a></li>
         {% endfor %}
         </ul>
     {% endfor %}
