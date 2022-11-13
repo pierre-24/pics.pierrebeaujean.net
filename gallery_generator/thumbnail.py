@@ -75,9 +75,9 @@ class ScalePicture(BaseImageTransform):
         self.height = height
 
     def _get_subname(self) -> str:
-        if not self.width:
+        if self.width < 0:
             return 'sh{}'.format(self.height)
-        elif not self.height:
+        elif self.height < 0:
             return 'sw{}'.format(self.width)
         else:
             return 's{}x{}'.format(self.width, self.height)
