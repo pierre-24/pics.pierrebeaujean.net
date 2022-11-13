@@ -26,7 +26,7 @@ def print_title(title: str):
 def status(root, db: GalleryDatabase):
     print_title('Status')
     if db.path.exists():
-        with db.session() as session:
+        with db.make_session() as session:
             print('Database `{}` exists:'.format(db.path))
             print('- {} Picture(s)'.format(session.execute(Picture.count()).scalar_one()))
             print('- {} Category(ies)'.format(session.execute(Category.count()).scalar_one()))
@@ -87,7 +87,7 @@ def command_crawl(root: pathlib.Path, db: GalleryDatabase, verbose: bool = False
     if verbose:
         print_title('Crawling phase')
 
-    with db.session() as session:
+    with db.make_session() as session:
         tag_manager = TagManager(root, session, verbose=verbose)
 
         for path in seek_pictures(root):
@@ -133,8 +133,9 @@ def main():
     parser.add_argument('source', help='source directory', type=pathlib.Path)
     parser.add_argument('-v', '--verbose', action='store_true', help='verbose output')
 
-    meg = parser.add_mutually_exclusive_group()
+    meg = parser.add_mutually_exclusive_group(required=True)
 
+    meg.add_argument('-s', '--status', action='store_true', help='Get status')
     meg.add_argument('-i', '--init', action='store_true', help='Initialize')
     meg.add_argument('-c', '--crawl', action='store_true', help='Update the database with new pictures')
     meg.add_argument('-o', '--output', type=pathlib.Path, help='Create a static website')
@@ -147,9 +148,6 @@ def main():
 
     db = GalleryDatabase(args.source)
 
-    if args.verbose:
-        status(args.source, db)
-
     try:
         if args.init:
             command_init(args.source, db, args.verbose)
@@ -157,6 +155,8 @@ def main():
             command_crawl(args.source, db, args.verbose)
         elif args.update:
             command_update(args.source, db, args.update, args.verbose)
+        elif args.status:
+            status(args.source, db)
     except Exception as e:
         return exit_failure('Error while executing command: {}'.format(e))
 

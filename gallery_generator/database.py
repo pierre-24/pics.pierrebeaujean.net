@@ -151,6 +151,15 @@ class Thumbnail(BaseModel):
     picture_id = Column(Integer, ForeignKey('picture.id'))
     picture = relationship('Picture', back_populates='thumbnails')
 
+    @classmethod
+    def create(cls, picture: int, path: str, ttype: str):
+        o = cls()
+        o.picture_id = picture
+        o.path = path
+        o.type = ttype
+
+        return o
+
 
 class GalleryDatabase:
 
@@ -169,5 +178,5 @@ class GalleryDatabase:
     def create_schema(self):
         Base.metadata.create_all(self._engine())
 
-    def session(self) -> Session:
+    def make_session(self) -> Session:
         return Session(self._engine())

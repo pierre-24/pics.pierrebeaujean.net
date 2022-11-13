@@ -1,38 +1,25 @@
+import pathlib
+import tempfile
+
 from tests import GCTestCase
 
 from PIL import Image
-
+from gallery_generator.thumbnail import ScalePicture, CropPicture, ScaleAndCropPicture, Thumbnailer
+from gallery_generator.database import Picture, Thumbnail
 from gallery_generator.script import command_crawl
-from gallery_generator.database import Picture
-from gallery_generator.thumbnail import ScalePicture, CropPicture
+
+from tests.tests_crawl import DispatchPictureFixture
 
 
-class UpdateTestCase(GCTestCase):
+class ImageTransformTestCase(GCTestCase, DispatchPictureFixture):
     def setUp(self) -> None:
         super().setUp()
-
-        # create directories and dispatch pictures in it
-        self.dirs = ['dir1', 'dir2']
-        self.ndirs = len(self.dirs)
-
-        for d in self.dirs:
-            path = self.root / d
-            path.mkdir()
-
-        self.pic1 = self.copy_to_temporary_directory('im1.JPEG', self.dirs[0] + '/im1.jpg')
-        self.pic2 = self.copy_to_temporary_directory('im2.JPEG', self.dirs[1] + '/im2.JPG')
-        self.pic3 = self.copy_to_temporary_directory('im3.JPEG', self.dirs[1] + '/im3.JPEG')
-
-        # crawl in that
-        command_crawl(self.root, self.db)
-
-        with self.db.session() as session:
-            self.assertEqual(session.execute(Picture.count()).scalar_one(), 3)
+        self.dispatch_one_pic(pic='im2.JPEG')
 
     def test_image_transform_ok(self):
         sz = 200
 
-        with Image.open(self.pic2) as im:
+        with Image.open(self.pic) as im:
             self.assertTrue(im.width > im.height)
 
             # rotate
@@ -60,3 +47,53 @@ class UpdateTestCase(GCTestCase):
             self.assertEqual(cropped_im.height, sz)
 
             self.assertNotAlmostEqual(cropped_im.width / cropped_im.height, im.width / im.height)  # ratio destroyed!
+
+
+class ThumbnailerTestCase(GCTestCase, DispatchPictureFixture):
+    def setUp(self) -> None:
+        super().setUp()
+        self.dispatch_one_pic()
+
+        command_crawl(self.root, self.db)
+
+        # set up target
+        self.target = pathlib.Path(tempfile.mkdtemp())
+        (self.target / Thumbnailer.THUMBNAIL_DIRECTORY).mkdir()
+
+        self.thumb_types = {
+            'small_square': ScaleAndCropPicture(128, 128),
+            'large_square': ScaleAndCropPicture(200, 200),
+        }
+
+    def test_thumbnail_one_pic_ok(self):
+        TTYPE, TTYPE2 = self.thumb_types.keys()
+
+        with self.db.make_session() as session:
+            self.assertEqual(session.execute(Picture.count()).scalar_one(), 1)
+            self.assertEqual(session.execute(Thumbnail.count()).scalar_one(), 0)
+
+            picture = session.execute(Picture.select()).scalar_one()
+
+            # generate a thumbnail
+            thumbnailer = Thumbnailer(self.root, self.target, session, thumb_types=self.thumb_types)
+            thumb_small = thumbnailer.get_thumbnail(picture, TTYPE)
+
+            self.assertEqual(thumb_small.picture, picture)
+            self.assertEqual(thumb_small.type, TTYPE)
+
+            self.assertTrue((self.target / thumb_small.path).exists())
+            self.assertEqual(session.execute(Thumbnail.count()).scalar_one(), 1)
+
+            picture = session.execute(Picture.select()).scalar_one()
+            self.assertEqual(len(picture.thumbnails), 1)
+            self.assertEqual(picture.thumbnails[0], thumb_small)
+
+            # ask for existing thumbnail gives the same thumb
+            self.assertEqual(thumbnailer.get_thumbnail(picture, TTYPE), thumb_small)
+            self.assertEqual(session.execute(Thumbnail.count()).scalar_one(), 1)
+
+            # ask for another thumb gives a new one
+            thumb_large = thumbnailer.get_thumbnail(picture, TTYPE2)
+            self.assertEqual(session.execute(Thumbnail.count()).scalar_one(), 2)
+            self.assertNotEqual(thumb_large, thumb_small)
+            self.assertEqual(thumb_large.type, TTYPE2)

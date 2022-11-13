@@ -10,7 +10,7 @@ class ModelsTestCase(GCTestCase):
     def setUp(self) -> None:
         super().setUp()
 
-        with self.db.session() as session:
+        with self.db.make_session() as session:
             c = Category.create('Test')
             session.add(c)
             session.commit()
@@ -31,6 +31,6 @@ class ModelsTestCase(GCTestCase):
 
     def test_create_models(self):
 
-        with self.db.session() as session:
+        with self.db.make_session() as session:
             print(session.execute(Category.select()).scalar_one().tags)
             print(session.execute(Category.select().where(Category.id.is_(1))).scalar())

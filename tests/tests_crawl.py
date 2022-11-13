@@ -22,13 +22,13 @@ class DispatchPictureFixture:
         self.pic2 = self.copy_to_temporary_directory('im2.JPEG', self.dirs[1] + '/im2.JPG')
         self.pic3 = self.copy_to_temporary_directory('im3.JPEG', self.dirs[1] + '/im3.JPEG')
 
-    def dispatch_one_pic(self):
+    def dispatch_one_pic(self, pic: str = 'im3.JPEG'):
         # create directory
         self.dir = 'dir'
         (self.root / self.dir).mkdir()
 
         # dispatch picture in it
-        self.pic = self.copy_to_temporary_directory('im3.JPEG', self.dir + '/im3.JPEG')
+        self.pic = self.copy_to_temporary_directory(pic, self.dir + '/{}'.format(pic))
 
 
 class SeekPictureTestCase(GCTestCase, DispatchPictureFixture):
@@ -90,7 +90,7 @@ class TagManagerTestCase(GCTestCase, DispatchPictureFixture):
 
     def test_tag_manager_one_image_ok(self):
 
-        with self.db.session() as session:
+        with self.db.make_session() as session:
             # nothing for the moment
             self.assertEqual(session.execute(Category.count()).scalar_one(), 0)
             self.assertEqual(session.execute(Tag.count()).scalar_one(), 0)
@@ -130,14 +130,14 @@ class CommandCrawlTestCase(GCTestCase, DispatchPictureFixture):
         self.dispatch_pics()
 
     def test_command_crawl(self):
-        with self.db.session() as session:
+        with self.db.make_session() as session:
             self.assertEqual(session.execute(Picture.count()).scalar_one(), 0)
             self.assertEqual(session.execute(Category.count()).scalar_one(), 0)
             self.assertEqual(session.execute(Tag.count()).scalar_one(), 0)
 
         command_crawl(self.root, self.db)
 
-        with self.db.session() as session:
+        with self.db.make_session() as session:
             self.assertEqual(session.execute(Picture.count()).scalar_one(), 3)
             self.assertEqual(session.execute(Tag.count()).scalar_one(), 7)
 
