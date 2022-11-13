@@ -1,22 +1,53 @@
 import argparse
 import pathlib
 import sys
+from datetime import datetime
+from jinja2 import Environment, select_autoescape, FileSystemLoader
 
 from gallery_generator import logger
 
-from gallery_generator.files import create_config_dirs
+from gallery_generator.files import create_config_dirs, CONFIG_DIR_NAME
 from gallery_generator.database import GalleryDatabase, Picture, Category, Tag
 from gallery_generator.files import seek_pictures
 from gallery_generator.tag import TagManager
 from gallery_generator.picture import create_picture_object
+from gallery_generator.thumbnail import Thumbnailer, ScalePicture, ScaleAndCropPicture, CropPicture
+
+
+# config
+TRANSFORMER_TYPES = {
+    'Scale': ScalePicture,
+    'Crop': CropPicture,
+    'ScaleAndCrop': ScaleAndCropPicture
+}
+
+
+CONFIG = {
+    'thumbnails': {
+        'gallery_small': {
+            'type': 'Scale',
+            'width': 300
+        },
+        'gallery_large': {
+            'type': 'Scale',
+            'width': 1920,
+            'height': 1920
+        },
+        'tag_thumbnail': {
+            'type': 'ScaleAndCrop',
+            'width': 300,
+            'height': 225
+        }
+    },
+    'page_content': {
+        'site_name': 'Gallery test'
+    }
+}
 
 
 def exit_failure(msg: str, code: int = -1):
     print(msg, file=sys.stderr)
     return sys.exit(code)
-
-
-CHAR_PER_LINE = 70
 
 
 def status(root, db: GalleryDatabase):
@@ -75,7 +106,7 @@ def command_crawl(root: pathlib.Path, db: GalleryDatabase):
                 picture = create_picture_object(root, path)
                 tag_manager.tag_picture(picture)
 
-                logger.info('[tags are {}]'.format(', '.join(t.name for t in picture.tags)))
+                logger.info('[{}]'.format(', '.join(t.name for t in picture.tags)))
 
                 session.add(picture)
                 session.commit()
@@ -83,6 +114,7 @@ def command_crawl(root: pathlib.Path, db: GalleryDatabase):
 
 def command_update(root: pathlib.Path, db: GalleryDatabase, target: pathlib.Path):
     """Update/create the static website:
+
     - Compile SCSS into CSS
     - Create a page for each tag that contains an image
     - Create index
@@ -93,6 +125,67 @@ def command_update(root: pathlib.Path, db: GalleryDatabase, target: pathlib.Path
 
     if not target.exists():
         raise FileNotFoundError('Target directory `{}` does not exists'.format(target))
+
+    # load templates
+    env = Environment(
+        loader=FileSystemLoader(pathlib.Path(__file__).parent / 'templates'),
+        autoescape=select_autoescape(['html', 'xml'])
+    )
+
+    template_index = env.get_template('index.html')
+    template_tag = env.get_template('tag.html')
+
+    now = datetime.now().strftime('%d/%m/%Y')
+
+    # TODO: CSS
+
+    # create thumb types
+    thumb_types = {}
+    for key, conf in CONFIG['thumbnails'].items():
+        transformer_type = conf.pop('type')
+        thumb_types[key] = TRANSFORMER_TYPES[transformer_type](**conf)
+
+    with db.make_session() as session:
+        # create thumbnailer
+        thumbnailer = Thumbnailer(root, target, session, thumb_types)
+
+        # create thumbnail directory
+        path_thumbnail = target / thumbnailer.THUMBNAIL_DIRECTORY
+        if not path_thumbnail.exists():
+            path_thumbnail.mkdir()
+
+        # go through all categories
+        categories = session.scalars(Category.select()).all()
+        for category in categories:
+
+            # create directory for category
+            path_category = target / category.get_directory()
+            if not path_category.exists():
+                path_category.mkdir()
+
+            for tag in category.tags:
+                logger.info('GENERATE {}'.format(tag.get_url()))
+                # update tag
+                tag.update_from_file(root / CONFIG_DIR_NAME / TagManager.TAG_DIRECTORY)
+
+                # render
+                path_tag = target / tag.get_url()
+                with path_tag.open('w') as f:
+                    f.write(template_tag.render(
+                        thumbnailer=thumbnailer,
+                        now=now,
+                        **CONFIG['page_content'],
+                        tag=tag
+                    ))
+
+        logger.info('GENERATE index.html')
+        with (target / 'index.html').open('w') as f:
+            f.write(template_index.render(
+                thumbnailer=thumbnailer,
+                now=now,
+                **CONFIG['page_content'],
+                categories=categories
+            ))
 
 
 def main():

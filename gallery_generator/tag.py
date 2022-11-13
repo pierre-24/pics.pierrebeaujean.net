@@ -89,7 +89,7 @@ class TagManager(metaclass=TaggingMeta):
         self.session.commit()
 
         # create file
-        path = self.get_tag_directory() / tag.get_file()
+        path = self.get_tag_directory() / tag.get_input_file()
         if not path.exists():
             with path.open('w') as f:
                 f.write('# {}'.format(name))

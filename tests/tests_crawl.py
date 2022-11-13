@@ -120,7 +120,7 @@ class TagManagerTestCase(GCTestCase, DispatchPictureFixture):
 
             # corresponding files are also created
             for c in categories:
-                path = tag_manager.get_tag_directory() / c.tags[0].get_file()
+                path = tag_manager.get_tag_directory() / c.tags[0].get_input_file()
                 self.assertTrue(path.exists())
 
 

@@ -1,4 +1,5 @@
 import pathlib
+from slugify import slugify
 
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Float, Table, create_engine, select, func
 from sqlalchemy.orm import declarative_base, relationship, Session
@@ -30,12 +31,14 @@ class Category(BaseModel):
     __tablename__ = 'category'
 
     name = Column(String)
+    slug = Column(String)
     tags = relationship('Tag')
 
     @classmethod
     def create(cls, name: str):
         o = cls()
         o.name = name
+        o.slug = slugify(name)
         return o
 
     def __repr__(self):
@@ -44,7 +47,13 @@ class Category(BaseModel):
         )
 
     def get_directory(self):
-        return pathlib.Path(self.name)
+        return pathlib.Path(self.slug)
+
+    def get_url(self):
+        """Get URL
+        """
+
+        return self.category.get_directory() / 'index.html'
 
 
 tag_picture_at = Table(
@@ -59,6 +68,7 @@ class Tag(BaseModel):
     __tablename__ = 'tag'
 
     name = Column(String)
+    slug = Column(String)
 
     display_name: str = None
     description: str = None
@@ -76,6 +86,7 @@ class Tag(BaseModel):
 
         o.category_id = category.id
         o.name = name
+        o.slug = slugify(name)
 
         return o
 
@@ -84,17 +95,37 @@ class Tag(BaseModel):
             repr(self.id), repr(self.name), repr(self.category_id)
         )
 
-    def get_file(self):
+    def get_input_file(self):
         """Get path to the file where the info are stored
         """
 
-        return self.category.get_directory() / '{}.md'.format(self.name)
+        return self.category.get_directory() / '{}.md'.format(self.slug)
+
+    def get_url(self):
+        """Get URL
+        """
+
+        return self.category.get_directory() / '{}.html'.format(self.slug)
 
     def update_from_file(self, tag_directory: pathlib.Path):
         """Read `tag_directory / self.get_file()` and update `display_name` and `description` from it
         """
 
-        raise NotImplementedError()
+        path = tag_directory / self.get_input_file()
+        self.display_name = self.name
+
+        if path.exists():
+            with path.open('r') as f:
+                content = f.read()
+                if content[0] == '#':
+                    next_line = content.find('\n')
+                    if next_line < 0:
+                        next_line = len(content)
+
+                    self.display_name = content[1:next_line].strip()
+                    self.description = content[next_line + 1:]
+                else:
+                    self.description = content
 
 
 class Picture(BaseModel):

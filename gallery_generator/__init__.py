@@ -12,6 +12,7 @@ __email__ = 'pierreb24@gmail.com'
 __status__ = 'Development'
 
 
+# logging
 logging.basicConfig(level=logging.WARNING)
 
 logger = logging.getLogger(__name__)

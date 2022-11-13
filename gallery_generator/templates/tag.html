@@ -1,6 +1,8 @@
 {% extends "base.ext.html" %}
 
 {% block page_content %}
-    {% for picture in pictures %}
+    <h1>{{ tag.display_name }}</h1>
+    {% for picture in tag.pictures %}
+        <img src="/{{ thumbnailer.get_thumbnail(picture, 'gallery_small').path }}" />
     {% endfor %}
 {% endblock %}
