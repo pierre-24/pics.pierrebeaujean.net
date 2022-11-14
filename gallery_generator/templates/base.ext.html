@@ -10,6 +10,21 @@
 <body>
     <nav>
         <a href="/index.html">{{ site_name }}</a>
+        <ul>
+            {% for category in categories.values() %}
+                <li>{{ category.name }}
+                    <ul>
+                        {% for tag in tags_per_cat[category.slug] %}
+                            <li><a href="/{{ tag.get_url() }}">{{ tag.display_name }}</a></li>
+                        {% endfor %}
+
+                    </ul>
+                </li>
+            {% endfor %}
+            {% for page in pages.values() %}
+                <li><a href="/{{ page.get_url() }}">{{ page.title }}</a></li>
+            {% endfor %}
+        </ul>
     </nav>
     {% block content %}
         <main>

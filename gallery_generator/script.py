@@ -209,6 +209,10 @@ def command_update(root: pathlib.Path, db: GalleryDatabase, target: pathlib.Path
             tags_per_cat_dic[category.slug] = [c[0] for c in tag_and_thumb]
             thumbnails_dic.update(**dict((t.slug, p) for t, p in tag_and_thumb))
 
+            # update tags
+            for tag in tags_per_cat_dic[category.slug]:
+                tag.update_from_file(root / CONFIG_DIR_NAME / TagManager.TAG_DIRECTORY)
+
         common_kwargs['categories'] = categories_dic
         common_kwargs['tags_per_cat'] = tags_per_cat_dic
         common_kwargs['thumbnails'] = thumbnails_dic
