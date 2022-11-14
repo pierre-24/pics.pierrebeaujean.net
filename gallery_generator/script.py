@@ -9,7 +9,7 @@ from gallery_generator import logger
 
 from gallery_generator.files import create_config_dirs, CONFIG_DIR_NAME
 from gallery_generator.database import GalleryDatabase, Picture, Category, Tag, tag_picture_at
-from gallery_generator.files import seek_pictures
+from gallery_generator.files import seek_pictures, Page, PAGE_DIR_NAME
 from gallery_generator.tag import TagManager
 from gallery_generator.picture import create_picture_object
 from gallery_generator.thumbnail import Thumbnailer, ScalePicture, ScaleAndCropPicture, CropPicture
@@ -148,6 +148,7 @@ def command_update(root: pathlib.Path, db: GalleryDatabase, target: pathlib.Path
 
     template_index = env.get_template('index.html')
     template_tag = env.get_template('tag.html')
+    template_page = env.get_template('page.html')
 
     # TODO: CSS
     # TODO: additional pages
@@ -171,11 +172,22 @@ def command_update(root: pathlib.Path, db: GalleryDatabase, target: pathlib.Path
         if not path_thumbnail.exists():
             path_thumbnail.mkdir()
 
-        # fetch categories & tags, ordered by the latest picture in them
-        categories = session.scalars(Category.select().order_by(Category.id)).all()
+        # -- FETCH
         tags_per_cat_dic = {}
         thumbnails_dic = {}
         categories_dic = {}
+        pages_dic = {}
+
+        # fetch pages
+        for path in (root / CONFIG_DIR_NAME / PAGE_DIR_NAME).glob('*.md'):
+            logger.info('FETCH {}'.format(path))
+            page = Page.create_from_file(path)
+            pages_dic[page.slug] = page
+
+        common_kwargs['pages'] = pages_dic
+
+        # fetch categories & tags
+        categories = session.scalars(Category.select().order_by(Category.id)).all()
 
         for category in categories:
             subq = select(
@@ -201,7 +213,7 @@ def command_update(root: pathlib.Path, db: GalleryDatabase, target: pathlib.Path
         common_kwargs['tags_per_cat'] = tags_per_cat_dic
         common_kwargs['thumbnails'] = thumbnails_dic
 
-        # generate pages for category and tags
+        # -- GENERATE
         for category in categories:
 
             # create directory for category
@@ -215,7 +227,7 @@ def command_update(root: pathlib.Path, db: GalleryDatabase, target: pathlib.Path
                 # update tag
                 tag.update_from_file(root / CONFIG_DIR_NAME / TagManager.TAG_DIRECTORY)
 
-                # get pictures in order
+                # get pictures in correct order
                 pictures = session.scalars(
                     Picture.select()
                     .join(tag_picture_at, tag_picture_at.c.right_id == Picture.id)
@@ -232,6 +244,15 @@ def command_update(root: pathlib.Path, db: GalleryDatabase, target: pathlib.Path
                         tag=tag,
                         pictures=pictures
                     ))
+
+        # generate pages
+        for page in pages_dic.values():
+            logger.info('GENERATE {}'.format(page.get_url()))
+            with (target / page.get_url()).open('w') as f:
+                f.write(template_page.render(
+                    **common_kwargs,
+                    page=page
+                ))
 
         # generate index
         logger.info('GENERATE index.html')
@@ -271,7 +292,7 @@ def main():
             command_update(args.source, db, args.update)
         elif args.status:
             status(args.source, db)
-    except FileNotFoundError as e:
+    except (FileNotFoundError, ValueError) as e:
         return exit_failure('Error while executing command: {}'.format(e))
 
 

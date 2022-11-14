@@ -7,8 +7,61 @@ from PIL import Image
 from gallery_generator.thumbnail import ScalePicture, CropPicture, ScaleAndCropPicture, Thumbnailer
 from gallery_generator.database import Picture, Thumbnail
 from gallery_generator.script import command_crawl
+from gallery_generator.files import Page, PAGE_DIR_NAME, CONFIG_DIR_NAME
 
 from tests.tests_crawl import DispatchPictureFixture
+
+
+class PageTestCase(GCTestCase):
+    def setUp(self) -> None:
+        super().setUp()
+        self.pages_dir = self.root / CONFIG_DIR_NAME / PAGE_DIR_NAME
+
+    def test_page_create_ok(self):
+        title = 'title'
+        content = 'content'
+        slug = 'test'
+        path = self.pages_dir / '{}.md'.format(slug)
+
+        page_ctn = '# {}\n{}'.format(title, content)
+
+        with path.open('w') as f:
+            f.write(page_ctn)
+
+        page = Page.create_from_file(path)
+        self.assertEqual(page.title, title)
+        self.assertEqual(page.content, page_ctn)
+        self.assertEqual(page.slug, slug)
+
+    def test_page_only_title_ok(self):
+        title = 'title'
+        slug = 'test'
+        path = self.pages_dir / '{}.md'.format(slug)
+
+        page_ctn = '# {}'.format(title)
+
+        with path.open('w') as f:
+            f.write(page_ctn)
+
+        page = Page.create_from_file(path)
+        self.assertEqual(page.title, title)
+        self.assertEqual(page.content, page_ctn)
+        self.assertEqual(page.slug, slug)
+
+    def test_page_only_content_ok(self):
+        content = 'content'
+        slug = 'test'
+        path = self.pages_dir / '{}.md'.format(slug)
+
+        page_ctn = content
+
+        with path.open('w') as f:
+            f.write(page_ctn)
+
+        page = Page.create_from_file(path)
+        self.assertEqual(page.title, slug)
+        self.assertEqual(page.content, page_ctn)
+        self.assertEqual(page.slug, slug)
 
 
 class ImageTransformTestCase(GCTestCase, DispatchPictureFixture):

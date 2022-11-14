@@ -3,11 +3,14 @@ import re
 
 from typing import Iterable
 
+from markdown import markdown
+
 CONFIG_DIR_NAME = '.gallery'
+PAGE_DIR_NAME = 'pages'
 
 CONFIG_DIRS = [
     '{}'.format(CONFIG_DIR_NAME),        # dir itself
-    '{}/pages'.format(CONFIG_DIR_NAME),  # extra pages
+    '{}/{}'.format(CONFIG_DIR_NAME, PAGE_DIR_NAME),  # extra pages
 ]
 
 
@@ -49,3 +52,31 @@ def seek_pictures(
         for f in dir.glob('*.*'):
             if r.match(str(f)):
                 yield f.relative_to(root)
+
+
+class Page:
+    def __init__(self, title: str, slug: str, content: str):
+        self.title = title
+        self.slug = slug
+        self.content = content
+
+    def to_html(self) -> str:
+        return markdown(self.content)
+
+    def get_url(self) -> str:
+        return '{}.html'.format(self.slug)
+
+    @classmethod
+    def create_from_file(cls, path: pathlib.Path):
+        with path.open() as f:
+            content = f.read()
+            title = slug = '.'.join(path.name.split('.')[:-1])
+
+            if content[0] == '#':
+                end = content.find('\n')
+                if end < 0:
+                    end = len(content)
+
+                title = content[1:end].strip()
+
+        return cls(title, slug, content)

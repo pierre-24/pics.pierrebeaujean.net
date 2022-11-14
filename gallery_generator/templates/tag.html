@@ -1,5 +1,7 @@
 {% extends "base.ext.html" %}
 
+{% block page_title %}{{ tag.category.name }} &bullet; {{ tag.display_name }}{% endblock %}
+
 {% block page_content %}
     <h1>{{ tag.display_name }}</h1>
     {% for picture in pictures %}
