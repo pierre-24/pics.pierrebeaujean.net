@@ -2,7 +2,7 @@
 
 {% block page_content %}
     <h1>{{ tag.display_name }}</h1>
-    {% for picture in tag.pictures %}
+    {% for picture in pictures %}
         <img src="/{{ thumbnailer.get_thumbnail(picture, 'gallery_small').path }}" />
     {% endfor %}
 {% endblock %}

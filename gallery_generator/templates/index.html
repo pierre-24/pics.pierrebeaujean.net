@@ -2,12 +2,12 @@
 
 {% block page_content %}
     <h1>Index</h1>
-    {% for category in categories %}
-        <h2>{{ category.name }}</h2>
+    {% for category_slug in categories_to_show %}
+        <h2>{{ categories[category_slug].name }}</h2>
         <ul>
-        {% for tag in category.tags %}
+        {% for tag in tags_per_cat[category_slug] %}
             <li><a href="{{ tag.get_url() }}">
-                <img src="/{{ thumbnailer.get_thumbnail(tag.pictures[-1], 'tag_thumbnail').path }}" />
+                <img src="/{{ thumbnailer.get_thumbnail(thumbnails[tag.slug], 'tag_thumbnail').path }}" />
                 {{ tag.display_name }}
             </a></li>
         {% endfor %}
