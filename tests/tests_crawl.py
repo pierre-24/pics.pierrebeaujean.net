@@ -1,8 +1,9 @@
 from tests import GCTestCase
+from sqlalchemy import func, select
 
 from gallery_generator.files import seek_pictures, PICTURE_EXCLUDE_DIRS
 from gallery_generator.picture import create_picture_object
-from gallery_generator.database import Tag, Category, Picture
+from gallery_generator.database import Tag, Category, Picture, tag_picture_at
 from gallery_generator.tag import TagManager
 from gallery_generator.script import command_crawl
 
@@ -154,3 +155,52 @@ class CommandCrawlTestCase(GCTestCase, DispatchPictureFixture):
             self.assertEqual(len(c_album.tags), len(self.dirs))
             self.assertEqual(len(c_date.tags), 3)  # May, July and September 2022
             self.assertEqual(len(c_focal.tags), 2)  # Normal and Large
+
+    def test_command_crawl_remove_deleted_picture(self):
+        command_crawl(self.root, self.db)
+
+        # get pic
+        with self.db.make_session() as session:
+            self.assertEqual(session.execute(Picture.count()).scalar_one(), 3)
+            self.assertEqual(session.execute(Tag.count()).scalar_one(), 7)
+            self.assertEqual(session.execute(func.count(tag_picture_at.c.left_id)).scalar_one(), 9)
+            # each picture get one tag from each category, so 9
+
+            picture_to_delete = session.scalars(Picture.select()).first()
+
+            self.assertEqual(
+                session.execute(Picture.count().where(Picture.id == picture_to_delete.id)).scalar_one(),
+                1
+            )
+
+            self.assertEqual(
+                session.execute(
+                    select(func.count(tag_picture_at.c.right_id))
+                    .where(tag_picture_at.c.right_id == picture_to_delete.id)
+                ).scalar_one(),
+                3
+            )
+
+        # delete pic
+        (self.root / picture_to_delete.path).unlink()
+
+        # recrawl
+        command_crawl(self.root, self.db)
+
+        with self.db.make_session() as session:
+            self.assertEqual(session.execute(Picture.count()).scalar_one(), 2)
+            self.assertEqual(session.execute(Tag.count()).scalar_one(), 7)
+            self.assertEqual(session.execute(func.count(tag_picture_at.c.left_id)).scalar_one(), 6)
+
+            self.assertEqual(
+                session.execute(Picture.count().where(Picture.id == picture_to_delete.id)).scalar_one(),
+                0
+            )
+
+            self.assertEqual(
+                session.execute(
+                    select(func.count(tag_picture_at.c.right_id))
+                    .where(tag_picture_at.c.right_id == picture_to_delete.id)
+                ).scalar_one(),
+                0
+            )  # links are also deleted

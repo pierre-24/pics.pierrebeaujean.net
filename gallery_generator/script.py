@@ -98,10 +98,14 @@ def command_crawl(root: pathlib.Path, db: GalleryDatabase):
     with db.make_session() as session:
         tag_manager = TagManager(root, session)
 
+        existing_pictures = dict((p.path, [p, False]) for p in session.scalars(Picture.select()).all())
+
+        # add new pictures
         for path in seek_pictures(root):
+            path_str = str(path)
             logger.info('FOUND {}'.format(path))
 
-            if session.execute(Picture.count().where(Picture.path == str(path))).scalar_one() == 0:
+            if path_str not in existing_pictures:
                 logger.info('NEW PICTURE {}'.format(path))
 
                 picture = create_picture_object(root, path)
@@ -111,6 +115,15 @@ def command_crawl(root: pathlib.Path, db: GalleryDatabase):
 
                 session.add(picture)
                 session.commit()
+            else:
+                existing_pictures[path_str][1] = True
+
+        # check if there is pictures to remove
+        for picture, found in existing_pictures.values():
+            if not found:
+                session.delete(picture)
+
+        session.commit()
 
 
 def command_update(root: pathlib.Path, db: GalleryDatabase, target: pathlib.Path):
@@ -137,6 +150,7 @@ def command_update(root: pathlib.Path, db: GalleryDatabase, target: pathlib.Path
     template_tag = env.get_template('tag.html')
 
     # TODO: CSS
+    # TODO: additional pages
 
     # create thumb types
     thumb_types = {}
@@ -157,7 +171,7 @@ def command_update(root: pathlib.Path, db: GalleryDatabase, target: pathlib.Path
         if not path_thumbnail.exists():
             path_thumbnail.mkdir()
 
-        # fetch categories & tags
+        # fetch categories & tags, ordered by the latest picture in them
         categories = session.scalars(Category.select().order_by(Category.id)).all()
         tags_per_cat_dic = {}
         thumbnails_dic = {}
@@ -201,7 +215,7 @@ def command_update(root: pathlib.Path, db: GalleryDatabase, target: pathlib.Path
                 # update tag
                 tag.update_from_file(root / CONFIG_DIR_NAME / TagManager.TAG_DIRECTORY)
 
-                # get pictures
+                # get pictures in order
                 pictures = session.scalars(
                     Picture.select()
                     .join(tag_picture_at, tag_picture_at.c.right_id == Picture.id)
@@ -226,8 +240,6 @@ def command_update(root: pathlib.Path, db: GalleryDatabase, target: pathlib.Path
                 **common_kwargs,
                 categories_to_show=('album', 'date')
             ))
-
-        # TODO: additional pages
 
 
 def main():
@@ -259,7 +271,7 @@ def main():
             command_update(args.source, db, args.update)
         elif args.status:
             status(args.source, db)
-    except Exception as e:
+    except FileNotFoundError as e:
         return exit_failure('Error while executing command: {}'.format(e))
 
 
