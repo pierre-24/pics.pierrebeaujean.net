@@ -9,7 +9,10 @@ help:
 	@echo "  lint                        to lint backend code (flake8)"
 
 init:
-	pip-sync && pip3 install -e .
+	pip3 install -e .
+
+install-dev:
+	pip-sync
 
 lint:
 	flake8 gallery_generator tests --max-line-length=120 --ignore=N802

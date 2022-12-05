@@ -1,0 +1,40 @@
+[project]
+name = "gallery-generator"
+dynamic = ["version"]
+authors = [
+    {name = "Pierre Beaujean", email = "pierreb24@gmail.com"},
+]
+description = "Yet another gallery (generator)."
+readme = "README.md"
+requires-python = ">=3.7"
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+]
+dependencies = [
+    'sqlalchemy',
+    'Pillow',
+    'exif',
+    'python-slugify',
+    'Jinja2',
+    'markdown',
+]
+
+[project.scripts]
+gallery_generator = "gallery_generator.scripts.main:main"
+
+[tool.setuptools]
+packages = ['gallery_generator', 'gallery_generator.scripts']
+
+[tool.setuptools.dynamic]
+version = {attr = "gallery_generator.__version__"}
+
+[tool.setuptools.package-data]
+gallery_generator = ["templates/*.html"]  # add templates

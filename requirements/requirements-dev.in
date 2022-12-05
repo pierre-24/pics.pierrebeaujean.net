@@ -1,4 +1,0 @@
--r requirements.in
-flake8
-flake8-quotes
-autopep8
