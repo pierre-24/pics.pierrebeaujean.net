@@ -1,11 +1,12 @@
 from tests import GCTestCase
 from sqlalchemy import func, select
 
-from gallery_generator.files import seek_pictures, PICTURE_EXCLUDE_DIRS
-from gallery_generator.picture import create_picture_object
-from gallery_generator.database import Tag, Category, Picture, tag_picture_at
-from gallery_generator.tag import TagManager
-from gallery_generator.script import command_crawl
+from gallery_generator.controllers.files import seek_pictures
+from gallery_generator import PICTURE_EXCLUDE_DIRS
+from gallery_generator.controllers.pictures import create_picture_object
+from gallery_generator.models import Tag, Category, Picture, tag_picture_at
+from gallery_generator.controllers.tags import TagManager
+from gallery_generator.scripts.crawl import command_crawl
 
 
 class DispatchPictureFixture:

@@ -3,7 +3,7 @@ from exif import Image as EImage
 from PIL import Image as PILImage
 import datetime
 
-from gallery_generator.database import Picture
+from gallery_generator.models import Picture
 
 
 def create_picture_object(root: pathlib.Path, path: pathlib.Path) -> Picture:

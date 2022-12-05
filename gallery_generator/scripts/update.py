@@ -1,129 +1,16 @@
-import argparse
 import pathlib
-import sys
 from datetime import datetime
-from jinja2 import Environment, select_autoescape, FileSystemLoader
+
+from jinja2 import Environment, FileSystemLoader, select_autoescape
 from sqlalchemy import select, func
 
-from gallery_generator import logger
-
-from gallery_generator.files import create_config_dirs, CONFIG_DIR_NAME
-from gallery_generator.database import GalleryDatabase, Picture, Category, Tag, tag_picture_at
-from gallery_generator.files import seek_pictures, Page, PAGE_DIR_NAME
+from gallery_generator import logger, CONFIG_PAGE_GEN
+from gallery_generator.controllers.thumbnails import TRANSFORMER_TYPES
+from gallery_generator.models import Category, tag_picture_at, Picture, Tag
+from gallery_generator.controllers.database import GalleryDatabase
+from gallery_generator.files import CONFIG_DIR_NAME, PAGE_DIR_NAME, Page
 from gallery_generator.tag import TagManager
-from gallery_generator.picture import create_picture_object
-from gallery_generator.thumbnail import Thumbnailer, ScalePicture, ScaleAndCropPicture, CropPicture
-
-
-# config
-TRANSFORMER_TYPES = {
-    'Scale': ScalePicture,
-    'Crop': CropPicture,
-    'ScaleAndCrop': ScaleAndCropPicture
-}
-
-
-CONFIG = {
-    'thumbnails': {
-        'gallery_small': {
-            'type': 'Scale',
-            'width': 300
-        },
-        'gallery_large': {
-            'type': 'Scale',
-            'width': 1920,
-            'height': 1920
-        },
-        'tag_thumbnail': {
-            'type': 'ScaleAndCrop',
-            'width': 300,
-            'height': 225
-        }
-    },
-    'page_content': {
-        'site_name': 'Gallery test'
-    }
-}
-
-
-def exit_failure(msg: str, code: int = -1):
-    print(msg, file=sys.stderr)
-    return sys.exit(code)
-
-
-def status(root, db: GalleryDatabase):
-    if db.path.exists():
-        with db.make_session() as session:
-            print('Database `{}` exists:'.format(db.path))
-            print('- {} Picture(s)'.format(session.execute(Picture.count()).scalar_one()))
-            print('- {} Category(ies)'.format(session.execute(Category.count()).scalar_one()))
-            print('- {} Tags(s)'.format(session.execute(Tag.count()).scalar_one()))
-    else:
-        print('Database `{}` does not exists.'.format(db.path))
-
-
-def command_init(root: pathlib.Path, db: GalleryDatabase):
-    """Create the config directories and database"""
-
-    logger.info('Create config dir in `{}`'.format(root))
-
-    # create config dirs
-    create_config_dirs(root)
-
-    # remove existing db and create a new one
-    logger.info('Create database in `{}`'.format(db.path))
-
-    if db.path.exists():
-        db.path.unlink()
-
-    # create schema
-    logger.info('Create schema')
-
-    db.create_schema()
-
-
-def command_crawl(root: pathlib.Path, db: GalleryDatabase):
-    """Go through all accessible pictures in the root directory, then for each of them
-
-    - check if they are already in the database, and if not,
-    - add them to the database, gathering the infos
-    - tag them accordingly, creating tags if required
-    """
-
-    if not db.exists():
-        raise FileNotFoundError('Database file `{}` does not exists'.format(db.path))
-
-    logger.info('* Crawling phase *')
-
-    with db.make_session() as session:
-        tag_manager = TagManager(root, session)
-
-        existing_pictures = dict((p.path, [p, False]) for p in session.scalars(Picture.select()).all())
-
-        # add new pictures
-        for path in seek_pictures(root):
-            path_str = str(path)
-            logger.info('FOUND {}'.format(path))
-
-            if path_str not in existing_pictures:
-                logger.info('NEW PICTURE {}'.format(path))
-
-                picture = create_picture_object(root, path)
-                tag_manager.tag_picture(picture)
-
-                logger.info('[{}]'.format(', '.join(t.name for t in picture.tags)))
-
-                session.add(picture)
-                session.commit()
-            else:
-                existing_pictures[path_str][1] = True
-
-        # check if there is pictures to remove
-        for picture, found in existing_pictures.values():
-            if not found:
-                session.delete(picture)
-
-        session.commit()
+from gallery_generator.thumbnail import Thumbnailer
 
 
 def command_update(root: pathlib.Path, db: GalleryDatabase, target: pathlib.Path):
@@ -155,7 +42,7 @@ def command_update(root: pathlib.Path, db: GalleryDatabase, target: pathlib.Path
 
     # create thumb types
     thumb_types = {}
-    for key, conf in CONFIG['thumbnails'].items():
+    for key, conf in CONFIG_PAGE_GEN['thumbnails'].items():
         transformer_type = conf.pop('type')
         thumb_types[key] = TRANSFORMER_TYPES[transformer_type](**conf)
 
@@ -165,7 +52,7 @@ def command_update(root: pathlib.Path, db: GalleryDatabase, target: pathlib.Path
 
         # common
         common_kwargs = {'thumbnailer': thumbnailer, 'now': datetime.now().strftime('%d/%m/%Y')}
-        common_kwargs.update(**CONFIG['page_content'])
+        common_kwargs.update(**CONFIG_PAGE_GEN['page_content'])
 
         # create thumbnail directory
         path_thumbnail = target / thumbnailer.THUMBNAIL_DIRECTORY
@@ -265,40 +152,3 @@ def command_update(root: pathlib.Path, db: GalleryDatabase, target: pathlib.Path
                 **common_kwargs,
                 categories_to_show=('album', 'date')
             ))
-
-
-def main():
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument('source', help='source directory', type=pathlib.Path)
-
-    meg = parser.add_mutually_exclusive_group(required=True)
-
-    meg.add_argument('-s', '--status', action='store_true', help='Get status')
-    meg.add_argument('-i', '--init', action='store_true', help='Initialize')
-    meg.add_argument('-c', '--crawl', action='store_true', help='Update the database with new pictures')
-    meg.add_argument('-u', '--update', type=pathlib.Path, help='Create a static website')
-
-    args = parser.parse_args()
-
-    # check path
-    if not args.source.exists():
-        return exit_failure('source directory `{}` does not exists'.format(args.source))
-
-    db = GalleryDatabase(args.source)
-
-    try:
-        if args.init:
-            command_init(args.source, db)
-        elif args.crawl:
-            command_crawl(args.source, db)
-        elif args.update:
-            command_update(args.source, db, args.update)
-        elif args.status:
-            status(args.source, db)
-    except (FileNotFoundError, ValueError) as e:
-        return exit_failure('Error while executing command: {}'.format(e))
-
-
-if __name__ == '__main__':
-    main()

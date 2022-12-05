@@ -3,8 +3,8 @@ import pathlib
 import tempfile
 import shutil
 
-from gallery_generator.database import GalleryDatabase
-from gallery_generator.script import command_init
+from gallery_generator.controllers.database import GalleryDatabase
+from gallery_generator.scripts.init import command_init
 
 
 class GCTestCase(unittest.TestCase):

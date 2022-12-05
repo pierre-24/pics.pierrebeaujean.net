@@ -1,7 +1,7 @@
 from tests import GCTestCase
 
-from gallery_generator.files import CONFIG_DIR_NAME
-from gallery_generator.database import GalleryDatabase
+from gallery_generator import CONFIG_DIR_NAME
+from gallery_generator.controllers.database import GalleryDatabase
 from sqlalchemy import inspect
 
 

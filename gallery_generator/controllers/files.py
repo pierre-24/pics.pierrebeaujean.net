@@ -5,13 +5,7 @@ from typing import Iterable
 
 from markdown import markdown
 
-CONFIG_DIR_NAME = '.gallery'
-PAGE_DIR_NAME = 'pages'
-
-CONFIG_DIRS = [
-    '{}'.format(CONFIG_DIR_NAME),        # dir itself
-    '{}/{}'.format(CONFIG_DIR_NAME, PAGE_DIR_NAME),  # extra pages
-]
+from gallery_generator import CONFIG_DIR_NAME, CONFIG_DIRS, PICTURE_EXTENSIONS, PICTURE_EXCLUDE_DIRS
 
 
 def create_config_dirs(root: pathlib.Path) -> None:
@@ -19,7 +13,7 @@ def create_config_dirs(root: pathlib.Path) -> None:
     """
 
     # add tags
-    from gallery_generator.tag import TagManager
+    from gallery_generator.controllers.tags import TagManager
     CONFIG_DIRS.append('{}/{}'.format(CONFIG_DIR_NAME, TagManager.TAG_DIRECTORY))
 
     # create dirs
@@ -27,10 +21,6 @@ def create_config_dirs(root: pathlib.Path) -> None:
         path = root / dir
         if not path.exists():
             path.mkdir()
-
-
-PICTURE_EXTENSIONS = ('jpg', 'JPG', 'JPEG', 'jpeg')
-PICTURE_EXCLUDE_DIRS = ()
 
 
 def seek_pictures(

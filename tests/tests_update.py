@@ -4,10 +4,11 @@ import tempfile
 from tests import GCTestCase
 
 from PIL import Image
-from gallery_generator.thumbnail import ScalePicture, CropPicture, ScaleAndCropPicture, Thumbnailer
-from gallery_generator.database import Picture, Thumbnail
-from gallery_generator.script import command_crawl
-from gallery_generator.files import Page, PAGE_DIR_NAME, CONFIG_DIR_NAME
+from gallery_generator.controllers.thumbnails import ScalePicture, CropPicture, ScaleAndCropPicture, Thumbnailer
+from gallery_generator.models import Picture, Thumbnail
+from gallery_generator.scripts.crawl import command_crawl
+from gallery_generator.controllers.files import Page
+from gallery_generator import CONFIG_DIR_NAME, PAGE_DIR_NAME
 
 from tests.tests_crawl import DispatchPictureFixture
 

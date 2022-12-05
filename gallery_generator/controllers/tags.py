@@ -2,9 +2,8 @@ import pathlib
 
 from sqlalchemy.orm import Session
 
-from gallery_generator import logger
-from gallery_generator.database import Category, Tag, Picture
-from gallery_generator.files import CONFIG_DIR_NAME
+from gallery_generator import logger, CONFIG_DIR_NAME
+from gallery_generator.models import Category, Tag, Picture
 
 
 class TaggingMeta(type):

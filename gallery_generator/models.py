@@ -1,12 +1,10 @@
 import pathlib
 from slugify import slugify
 
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Float, Table, create_engine, select, func
-from sqlalchemy.orm import declarative_base, relationship, Session
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Float, Table, select, func
+from sqlalchemy.orm import declarative_base, relationship
 
 from typing import Tuple
-
-from gallery_generator.files import CONFIG_DIR_NAME
 
 Base = declarative_base()
 
@@ -190,24 +188,3 @@ class Thumbnail(BaseModel):
         o.type = ttype
 
         return o
-
-
-class GalleryDatabase:
-
-    DATABASE_NAME = 'gallery.sqlite3'
-
-    def __init__(self, root: pathlib.Path):
-        self.path = root / CONFIG_DIR_NAME / self.DATABASE_NAME
-        self.db_file = 'sqlite:///{}'.format(self.path)
-
-    def exists(self) -> bool:
-        return self.path.exists()
-
-    def _engine(self):
-        return create_engine(self.db_file)
-
-    def create_schema(self):
-        Base.metadata.create_all(self._engine())
-
-    def make_session(self) -> Session:
-        return Session(self._engine())

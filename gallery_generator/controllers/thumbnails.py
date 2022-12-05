@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from PIL import Image as PILImage
 
 from gallery_generator import logger
-from gallery_generator.database import Picture, Thumbnail
+from gallery_generator.models import Picture, Thumbnail
 
 
 class BaseImageTransform:
@@ -215,3 +215,10 @@ class Thumbnailer:
                 return thumb
 
         return self._create_thumbnail(picture, ttype)
+
+
+TRANSFORMER_TYPES = {
+    'Scale': ScalePicture,
+    'Crop': CropPicture,
+    'ScaleAndCrop': ScaleAndCropPicture
+}
