@@ -1,7 +1,4 @@
 import pathlib
-import re
-
-from typing import Iterable
 
 from gallery_generator import CONFIG_DIR_NAME, CONFIG_DIRS
 
@@ -19,24 +16,3 @@ def create_config_dirs(root: pathlib.Path) -> None:
         path = root / dir
         if not path.exists():
             path.mkdir()
-
-
-def seek_pictures(
-        root: pathlib.Path,
-        extensions: Iterable[str],
-        exclude_dirs: Iterable[str]
-) -> Iterable[pathlib.Path]:
-    """Look in subdirectories of `root` for all pictures, recognized by their extension.
-
-    Return an iterable of path to pictures, relative to `root`.
-    """
-
-    r = re.compile(r'.*\.({})'.format('|'.join(extensions)))
-
-    for dir in root.iterdir():
-        if dir.name in exclude_dirs:
-            continue
-
-        for f in dir.glob('*.*'):
-            if r.match(str(f)):
-                yield f.relative_to(root)

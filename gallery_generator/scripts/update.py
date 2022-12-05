@@ -76,6 +76,12 @@ class CommandUpdate:
                 tag.update_from_file(root / CONFIG_DIR_NAME / TagManager.TAG_DIRECTORY)
 
     def render_all(self, target: pathlib.Path, session: Session):
+
+        # make directory for thumbnails
+        path_thumbnail = target / self.thumbnailer.THUMBNAIL_DIRECTORY
+        if not path_thumbnail.exists():
+            path_thumbnail.mkdir()
+
         # renders categories and tags
         for category in self.categories_dic.values():
 
@@ -113,13 +119,11 @@ class CommandUpdate:
 
     def __call__(self, root: pathlib.Path, db: GalleryDatabase, target: pathlib.Path):
         with db.make_session() as session:
-            # create thumbnailer and directory
-            self.thumbnailer = Thumbnailer(root, target, session, self.thumb_types)
-            path_thumbnail = target / self.thumbnailer.THUMBNAIL_DIRECTORY
-            if not path_thumbnail.exists():
-                path_thumbnail.mkdir()
 
-            # fetch
+            # create thumbnailer
+            self.thumbnailer = Thumbnailer(root, target, session, self.thumb_types)
+
+            # fetch other
             self.fetch_all(root, session)
 
             # render

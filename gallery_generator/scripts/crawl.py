@@ -3,8 +3,7 @@ import pathlib
 from gallery_generator import logger, CONFIG
 from gallery_generator.models import Picture
 from gallery_generator.controllers.database import GalleryDatabase
-from gallery_generator.controllers.files import seek_pictures
-from gallery_generator.controllers.pictures import create_picture_object
+from gallery_generator.controllers.pictures import create_picture_object, seek_pictures
 from gallery_generator.controllers.tags import TagManager
 
 

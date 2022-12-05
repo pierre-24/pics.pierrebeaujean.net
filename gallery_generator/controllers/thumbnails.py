@@ -175,7 +175,7 @@ class ScaleAndCropPicture(CropPicture):
 
 class Thumbnailer:
 
-    THUMBNAIL_DIRECTORY = pathlib.Path('thumb')
+    THUMBNAIL_DIRECTORY = pathlib.Path('thumbs')
 
     def __init__(
         self, root: pathlib.Path, target: pathlib.Path, session: Session, thumb_types: Dict[str, BaseImageTransform]
