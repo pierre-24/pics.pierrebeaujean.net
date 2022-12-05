@@ -31,7 +31,7 @@ dependencies = [
 gallery_generator = "gallery_generator.scripts.main:main"
 
 [tool.setuptools]
-packages = ['gallery_generator', 'gallery_generator.scripts']
+packages = ['gallery_generator', 'gallery_generator.controllers', 'gallery_generator.scripts']
 
 [tool.setuptools.dynamic]
 version = {attr = "gallery_generator.__version__"}
