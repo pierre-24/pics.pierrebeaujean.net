@@ -28,10 +28,7 @@ CONFIG_DIRS = [
     '{}/{}'.format(CONFIG_DIR_NAME, PAGE_DIR_NAME),  # extra pages
 ]
 
-PICTURE_EXTENSIONS = ('jpg', 'JPG', 'JPEG', 'jpeg')
-PICTURE_EXCLUDE_DIRS = ()
-
-CONFIG_PAGE_GEN = {
+CONFIG = {
     'thumbnails': {
         'gallery_small': {
             'type': 'Scale',
@@ -48,7 +45,12 @@ CONFIG_PAGE_GEN = {
             'height': 225
         }
     },
-    'page_content': {
-        'site_name': 'Gallery test'
+    'crawl': {
+        'picture_exts': ('jpg', 'JPG', 'JPEG', 'jpeg'),
+        'excluded_dirs': (),
+    },
+    'update': {
+        'site_name': 'Gallery test',
+        'index_categories_to_show': ('album', 'date')
     }
 }

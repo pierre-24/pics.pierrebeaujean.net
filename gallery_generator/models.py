@@ -1,4 +1,6 @@
 import pathlib
+
+from markdown import markdown
 from slugify import slugify
 
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Float, Table, select, func
@@ -125,6 +127,9 @@ class Tag(BaseModel):
                 else:
                     self.description = content
 
+    def to_html(self) -> str:
+        return markdown(self.description)
+
 
 class Picture(BaseModel):
     __tablename__ = 'picture'
@@ -188,3 +193,31 @@ class Thumbnail(BaseModel):
         o.type = ttype
 
         return o
+
+
+class Page:
+    def __init__(self, title: str, slug: str, content: str):
+        self.title = title
+        self.slug = slug
+        self.content = content
+
+    def to_html(self) -> str:
+        return markdown(self.content)
+
+    def get_url(self) -> str:
+        return '{}.html'.format(self.slug)
+
+    @classmethod
+    def create_from_file(cls, path: pathlib.Path):
+        with path.open() as f:
+            content = f.read()
+            title = slug = '.'.join(path.name.split('.')[:-1])
+
+            if content[0] == '#':
+                end = content.find('\n')
+                if end < 0:
+                    end = len(content)
+
+                title = content[1:end].strip()
+
+        return cls(title, slug, content)

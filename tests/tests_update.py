@@ -5,9 +5,8 @@ from tests import GCTestCase
 
 from PIL import Image
 from gallery_generator.controllers.thumbnails import ScalePicture, CropPicture, ScaleAndCropPicture, Thumbnailer
-from gallery_generator.models import Picture, Thumbnail
+from gallery_generator.models import Picture, Thumbnail, Page
 from gallery_generator.scripts.crawl import command_crawl
-from gallery_generator.controllers.files import Page
 from gallery_generator import CONFIG_DIR_NAME, PAGE_DIR_NAME
 
 from tests.tests_crawl import DispatchPictureFixture

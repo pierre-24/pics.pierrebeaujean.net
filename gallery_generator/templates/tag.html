@@ -4,6 +4,9 @@
 
 {% block page_content %}
     <h1>{{ tag.display_name }}</h1>
+
+    {{ tag.to_html()|safe }}
+
     {% for picture in pictures %}
         <img src="/{{ thumbnailer.get_thumbnail(picture, 'gallery_small').path }}" />
     {% endfor %}

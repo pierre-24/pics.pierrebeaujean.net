@@ -1,6 +1,6 @@
 import pathlib
 
-from gallery_generator import logger
+from gallery_generator import logger, CONFIG
 from gallery_generator.models import Picture
 from gallery_generator.controllers.database import GalleryDatabase
 from gallery_generator.controllers.files import seek_pictures
@@ -27,7 +27,9 @@ def command_crawl(root: pathlib.Path, db: GalleryDatabase):
         existing_pictures = dict((p.path, [p, False]) for p in session.scalars(Picture.select()).all())
 
         # add new pictures
-        for path in seek_pictures(root):
+        for path in seek_pictures(
+                root, extensions=CONFIG['crawl']['picture_exts'], exclude_dirs=CONFIG['crawl']['excluded_dirs']):
+
             path_str = str(path)
             logger.info('FOUND {}'.format(path))
 

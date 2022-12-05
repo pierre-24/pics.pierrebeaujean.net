@@ -2,7 +2,7 @@ from tests import GCTestCase
 from sqlalchemy import func, select
 
 from gallery_generator.controllers.files import seek_pictures
-from gallery_generator import PICTURE_EXCLUDE_DIRS
+from gallery_generator import CONFIG
 from gallery_generator.controllers.pictures import create_picture_object
 from gallery_generator.models import Tag, Category, Picture, tag_picture_at
 from gallery_generator.controllers.tags import TagManager
@@ -39,20 +39,23 @@ class SeekPictureTestCase(GCTestCase, DispatchPictureFixture):
         self.dispatch_pics()
 
     def test_seek_pictures_ok(self):
-        found_pictures = list(seek_pictures(self.root))
+        found_pictures = list(seek_pictures(
+            self.root, extensions=CONFIG['crawl']['picture_exts'], exclude_dirs=CONFIG['crawl']['excluded_dirs']))
 
         for pic in [self.pic1, self.pic2, self.pic3]:
             self.assertIn(pic.relative_to(self.root), found_pictures)
 
     def test_seek_pictures_exclude_dir_ok(self):
-        found_pictures = list(seek_pictures(self.root, exclude_dirs=PICTURE_EXCLUDE_DIRS + (self.dirs[1], )))
+        found_pictures = list(seek_pictures(
+            self.root, extensions=CONFIG['crawl']['picture_exts'], exclude_dirs=(self.dirs[1], )))
 
         self.assertIn(self.pic1.relative_to(self.root), found_pictures)
         self.assertNotIn(self.pic2.relative_to(self.root), found_pictures)
         self.assertNotIn(self.pic3.relative_to(self.root), found_pictures)
 
     def test_seek_pictures_extensions_ok(self):
-        found_pictures = list(seek_pictures(self.root, extensions=('JPG', )))
+        found_pictures = list(seek_pictures(
+            self.root, extensions=('JPG', ), exclude_dirs=CONFIG['crawl']['excluded_dirs']))
 
         self.assertNotIn(self.pic1.relative_to(self.root), found_pictures)
         self.assertIn(self.pic2.relative_to(self.root), found_pictures)

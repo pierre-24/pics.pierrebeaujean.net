@@ -3,9 +3,7 @@ import re
 
 from typing import Iterable
 
-from markdown import markdown
-
-from gallery_generator import CONFIG_DIR_NAME, CONFIG_DIRS, PICTURE_EXTENSIONS, PICTURE_EXCLUDE_DIRS
+from gallery_generator import CONFIG_DIR_NAME, CONFIG_DIRS
 
 
 def create_config_dirs(root: pathlib.Path) -> None:
@@ -25,8 +23,8 @@ def create_config_dirs(root: pathlib.Path) -> None:
 
 def seek_pictures(
         root: pathlib.Path,
-        extensions: Iterable[str] = PICTURE_EXTENSIONS,
-        exclude_dirs: Iterable[str] = PICTURE_EXCLUDE_DIRS
+        extensions: Iterable[str],
+        exclude_dirs: Iterable[str]
 ) -> Iterable[pathlib.Path]:
     """Look in subdirectories of `root` for all pictures, recognized by their extension.
 
@@ -42,31 +40,3 @@ def seek_pictures(
         for f in dir.glob('*.*'):
             if r.match(str(f)):
                 yield f.relative_to(root)
-
-
-class Page:
-    def __init__(self, title: str, slug: str, content: str):
-        self.title = title
-        self.slug = slug
-        self.content = content
-
-    def to_html(self) -> str:
-        return markdown(self.content)
-
-    def get_url(self) -> str:
-        return '{}.html'.format(self.slug)
-
-    @classmethod
-    def create_from_file(cls, path: pathlib.Path):
-        with path.open() as f:
-            content = f.read()
-            title = slug = '.'.join(path.name.split('.')[:-1])
-
-            if content[0] == '#':
-                end = content.find('\n')
-                if end < 0:
-                    end = len(content)
-
-                title = content[1:end].strip()
-
-        return cls(title, slug, content)

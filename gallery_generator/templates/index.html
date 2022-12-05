@@ -3,7 +3,7 @@
 
 {% block page_content %}
     <h1>Index</h1>
-    {% for category_slug in categories_to_show %}
+    {% for category_slug in index_categories_to_show %}
         <h2>{{ categories[category_slug].name }}</h2>
         <ul>
         {% for tag in tags_per_cat[category_slug] %}
