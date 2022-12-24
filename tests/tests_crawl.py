@@ -1,14 +1,15 @@
 from tests import GCTestCase
 from sqlalchemy import func, select
 
-from gallery_generator import CONFIG
 from gallery_generator.controllers.pictures import create_picture_object, seek_pictures
 from gallery_generator.models import Tag, Category, Picture, tag_picture_at
 from gallery_generator.controllers.tags import TagManager
 from gallery_generator.scripts.crawl import command_crawl
+from gallery_generator.controllers import settings
 
 
 class DispatchPictureFixture:
+
     def dispatch_pics(self):
         # create directories
         self.dirs = ['dir1', 'dir2']
@@ -35,18 +36,25 @@ class DispatchPictureFixture:
 class SeekPictureTestCase(GCTestCase, DispatchPictureFixture):
     def setUp(self) -> None:
         super().setUp()
+        self.settings = settings.CONFIG_BASE
         self.dispatch_pics()
 
     def test_seek_pictures_ok(self):
         found_pictures = list(seek_pictures(
-            self.root, extensions=CONFIG['crawl']['picture_exts'], exclude_dirs=CONFIG['crawl']['excluded_dirs']))
+            self.root,
+            extensions=self.settings['crawl_phase']['picture_exts'],
+            exclude_dirs=self.settings['crawl_phase']['excluded_dirs'])
+        )
 
         for pic in [self.pic1, self.pic2, self.pic3]:
             self.assertIn(pic.relative_to(self.root), found_pictures)
 
     def test_seek_pictures_exclude_dir_ok(self):
         found_pictures = list(seek_pictures(
-            self.root, extensions=CONFIG['crawl']['picture_exts'], exclude_dirs=(self.dirs[1], )))
+            self.root,
+            extensions=self.settings['crawl_phase']['picture_exts'],
+            exclude_dirs=(self.dirs[1], ))
+        )
 
         self.assertIn(self.pic1.relative_to(self.root), found_pictures)
         self.assertNotIn(self.pic2.relative_to(self.root), found_pictures)
@@ -54,7 +62,7 @@ class SeekPictureTestCase(GCTestCase, DispatchPictureFixture):
 
     def test_seek_pictures_extensions_ok(self):
         found_pictures = list(seek_pictures(
-            self.root, extensions=('JPG', ), exclude_dirs=CONFIG['crawl']['excluded_dirs']))
+            self.root, extensions=('JPG', ), exclude_dirs=self.settings['crawl_phase']['excluded_dirs']))
 
         self.assertNotIn(self.pic1.relative_to(self.root), found_pictures)
         self.assertIn(self.pic2.relative_to(self.root), found_pictures)
@@ -131,6 +139,7 @@ class TagManagerTestCase(GCTestCase, DispatchPictureFixture):
 class CommandCrawlTestCase(GCTestCase, DispatchPictureFixture):
     def setUp(self) -> None:
         super().setUp()
+        self.settings = settings.CONFIG_BASE
         self.dispatch_pics()
 
     def test_command_crawl(self):
@@ -139,7 +148,7 @@ class CommandCrawlTestCase(GCTestCase, DispatchPictureFixture):
             self.assertEqual(session.execute(Category.count()).scalar_one(), 0)
             self.assertEqual(session.execute(Tag.count()).scalar_one(), 0)
 
-        command_crawl(self.root, self.db)
+        command_crawl(self.root, self.settings, self.db)
 
         with self.db.make_session() as session:
             self.assertEqual(session.execute(Picture.count()).scalar_one(), 3)
@@ -160,7 +169,7 @@ class CommandCrawlTestCase(GCTestCase, DispatchPictureFixture):
             self.assertEqual(len(c_focal.tags), 2)  # Normal and Large
 
     def test_command_crawl_remove_deleted_picture(self):
-        command_crawl(self.root, self.db)
+        command_crawl(self.root, self.settings, self.db)
 
         # get pic
         with self.db.make_session() as session:
@@ -188,7 +197,7 @@ class CommandCrawlTestCase(GCTestCase, DispatchPictureFixture):
         (self.root / picture_to_delete.path).unlink()
 
         # recrawl
-        command_crawl(self.root, self.db)
+        command_crawl(self.root, self.settings, self.db)
 
         with self.db.make_session() as session:
             self.assertEqual(session.execute(Picture.count()).scalar_one(), 2)

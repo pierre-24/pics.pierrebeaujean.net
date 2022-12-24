@@ -5,7 +5,7 @@ from typing import Dict, List
 from sqlalchemy.orm import Session
 from sqlalchemy import select, func
 
-from gallery_generator import logger, CONFIG, CONFIG_DIR_NAME, PAGE_DIR_NAME
+from gallery_generator import logger, CONFIG_DIR_NAME, PAGE_DIR_NAME
 from gallery_generator.controllers.database import GalleryDatabase
 from gallery_generator.controllers.tags import TagManager
 from gallery_generator.controllers.thumbnails import TRANSFORMER_TYPES, Thumbnailer
@@ -16,11 +16,9 @@ from gallery_generator.views import TagView, PageView, IndexView
 class CommandUpdate:
     def __init__(self):
         self.thumb_types = {}
-        for key, conf in CONFIG['thumbnails'].items():
-            transformer_type = conf.pop('type')
-            self.thumb_types[key] = TRANSFORMER_TYPES[transformer_type](**conf)
-
         self.thumbnailer: Thumbnailer = None
+
+        self.page_context = {}
 
         self.pages_dic: Dict[str, Page] = {}
         self.categories_dic: Dict[str, Category] = {}
@@ -37,7 +35,7 @@ class CommandUpdate:
             tags_per_cat=self.tags_per_cat_dic,
             now=datetime.now().strftime('%d/%m/%Y'),
             # others
-            **CONFIG['update']
+            **self.page_context
         )
 
     def fetch_all(self, root: pathlib.Path, session: Session):
@@ -117,7 +115,14 @@ class CommandUpdate:
         view = IndexView(self.thumbnails_dic, self.common_context)
         view.render(target)
 
-    def __call__(self, root: pathlib.Path, db: GalleryDatabase, target: pathlib.Path):
+    def __call__(self, root: pathlib.Path, settings: dict, db: GalleryDatabase, target: pathlib.Path):
+        for key, conf in settings['update_phase']['thumbnails'].items():
+            conf = conf.copy()
+            transformer_type = conf.pop('type')
+            self.thumb_types[key] = TRANSFORMER_TYPES[transformer_type](**conf)
+
+        self.page_context = settings['update_phase']['page_context']
+
         with db.make_session() as session:
 
             # create thumbnailer

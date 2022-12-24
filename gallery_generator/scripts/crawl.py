@@ -1,13 +1,13 @@
 import pathlib
 
-from gallery_generator import logger, CONFIG
+from gallery_generator import logger
 from gallery_generator.models import Picture
 from gallery_generator.controllers.database import GalleryDatabase
 from gallery_generator.controllers.pictures import create_picture_object, seek_pictures
 from gallery_generator.controllers.tags import TagManager
 
 
-def command_crawl(root: pathlib.Path, db: GalleryDatabase):
+def command_crawl(root: pathlib.Path, settings: dict, db: GalleryDatabase):
     """Go through all accessible pictures in the root directory, then for each of them
 
     - check if they are already in the database, and if not,
@@ -27,7 +27,10 @@ def command_crawl(root: pathlib.Path, db: GalleryDatabase):
 
         # add new pictures
         for path in seek_pictures(
-                root, extensions=CONFIG['crawl']['picture_exts'], exclude_dirs=CONFIG['crawl']['excluded_dirs']):
+                root,
+                extensions=settings['crawl_phase']['picture_exts'],
+                exclude_dirs=settings['crawl_phase']['excluded_dirs']
+        ):
 
             path_str = str(path)
             logger.info('FOUND {}'.format(path))

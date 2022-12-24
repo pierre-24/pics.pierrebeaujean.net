@@ -1,6 +1,8 @@
 import pathlib
 import tempfile
 
+from gallery_generator.controllers import settings
+from gallery_generator.scripts.update import command_update
 from tests import GCTestCase
 
 from PIL import Image
@@ -105,9 +107,10 @@ class ImageTransformTestCase(GCTestCase, DispatchPictureFixture):
 class ThumbnailerTestCase(GCTestCase, DispatchPictureFixture):
     def setUp(self) -> None:
         super().setUp()
-        self.dispatch_one_pic()
 
-        command_crawl(self.root, self.db)
+        self.dispatch_one_pic()
+        self.settings = settings.CONFIG_BASE
+        command_crawl(self.root, self.settings, self.db)
 
         # set up target
         self.target = pathlib.Path(tempfile.mkdtemp())
@@ -176,3 +179,17 @@ class ThumbnailerTestCase(GCTestCase, DispatchPictureFixture):
             thumbnailer.get_thumbnail(picture, TTYPE)
             self.assertEqual(session.execute(Thumbnail.count()).scalar_one(), 1)
             self.assertTrue(path.exists())
+
+
+class UpdateTestCase(GCTestCase, DispatchPictureFixture):
+    def setUp(self) -> None:
+        super().setUp()
+
+        self.dispatch_pics()
+        self.settings = settings.CONFIG_BASE
+        command_crawl(self.root, self.settings, self.db)
+
+        self.target = pathlib.Path(tempfile.mkdtemp())
+
+    def test_update_ok(self):
+        command_update(self.root, self.settings, self.db, self.target)
