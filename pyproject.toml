@@ -25,6 +25,8 @@ dependencies = [
     'python-slugify',
     'Jinja2',
     'markdown',
+    'pyyaml',
+    'schema'
 ]
 
 [project.scripts]
