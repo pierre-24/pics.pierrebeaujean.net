@@ -36,7 +36,7 @@ class DispatchPictureFixture:
 class SeekPictureTestCase(GCTestCase, DispatchPictureFixture):
     def setUp(self) -> None:
         super().setUp()
-        self.settings = settings.CONFIG_BASE
+        self.settings = settings.SETTINGS_BASE
         self.dispatch_pics()
 
     def test_seek_pictures_ok(self):
@@ -139,7 +139,7 @@ class TagManagerTestCase(GCTestCase, DispatchPictureFixture):
 class CommandCrawlTestCase(GCTestCase, DispatchPictureFixture):
     def setUp(self) -> None:
         super().setUp()
-        self.settings = settings.CONFIG_BASE
+        self.settings = settings.SETTINGS_BASE
         self.dispatch_pics()
 
     def test_command_crawl(self):

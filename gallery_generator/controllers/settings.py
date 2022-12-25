@@ -2,7 +2,7 @@ from schema import Schema, Optional
 
 from typing import List
 
-CONFIG_BASE = {
+SETTINGS_BASE = {
     'crawl_phase': {
         'picture_exts': ['jpg', 'JPG', 'JPEG', 'jpeg'],
         'excluded_dirs': [],
@@ -31,7 +31,7 @@ CONFIG_BASE = {
     }
 }
 
-CONFIG_SCHEMA = Schema({
+SETTINGS_VALIDATION_SCHEMA = Schema({
     'crawl_phase': {
         'picture_exts': [str],
         'excluded_dirs': [str]

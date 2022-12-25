@@ -1,4 +1,4 @@
-from gallery_generator.controllers.settings import merge_settings, CONFIG_SCHEMA, CONFIG_BASE
+from gallery_generator.controllers.settings import merge_settings, SETTINGS_VALIDATION_SCHEMA, SETTINGS_BASE
 from tests import GCTestCase
 
 
@@ -52,4 +52,4 @@ class SettingsTestCase(GCTestCase):
         )
 
     def test_base_config_valid(self):
-        self.assertEqual(CONFIG_SCHEMA.validate(CONFIG_BASE), CONFIG_BASE)
+        self.assertTrue(SETTINGS_VALIDATION_SCHEMA.is_valid(SETTINGS_BASE))

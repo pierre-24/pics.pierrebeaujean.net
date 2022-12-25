@@ -109,7 +109,7 @@ class ThumbnailerTestCase(GCTestCase, DispatchPictureFixture):
         super().setUp()
 
         self.dispatch_one_pic()
-        self.settings = settings.CONFIG_BASE
+        self.settings = settings.SETTINGS_BASE
         command_crawl(self.root, self.settings, self.db)
 
         # set up target
@@ -186,7 +186,7 @@ class UpdateTestCase(GCTestCase, DispatchPictureFixture):
         super().setUp()
 
         self.dispatch_pics()
-        self.settings = settings.CONFIG_BASE
+        self.settings = settings.SETTINGS_BASE
         command_crawl(self.root, self.settings, self.db)
 
         self.target = pathlib.Path(tempfile.mkdtemp())
