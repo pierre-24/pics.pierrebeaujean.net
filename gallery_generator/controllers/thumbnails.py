@@ -9,6 +9,9 @@ from gallery_generator import logger
 from gallery_generator.models import Picture, Thumbnail
 
 
+l_logger = logger.getChild('controllers.thumbnails')
+
+
 class BaseImageTransform:
     EXIF_ROT_TAG = 0x0112
 
@@ -188,7 +191,7 @@ class Thumbnailer:
     def _create_thumbnail(self, picture: Picture, ttype: str) -> Thumbnail:
         transformer: BaseImageTransform = self.thumb_types[ttype]
         name = transformer.get_name('{}_id{}'.format(pathlib.Path(picture.path).parent.name, picture.id))
-        logger.info('NEW THUMBNAIL {}'.format(self.THUMBNAIL_DIRECTORY / name))
+        l_logger.info('NEW THUMBNAIL {}'.format(self.THUMBNAIL_DIRECTORY / name))
 
         # transform
         transformer(self.root / picture.path, self.target / self.THUMBNAIL_DIRECTORY / name)
@@ -210,7 +213,7 @@ class Thumbnailer:
         for thumb in picture.thumbnails:
             if thumb.type == ttype:
                 if not (self.target / thumb.path).exists():  # re-create if needed
-                    logger.info('MAKE {}'.format(thumb.path))
+                    l_logger.info('MAKE {}'.format(thumb.path))
                     self.thumb_types[ttype](self.root / picture.path, self.target / thumb.path)
                 return thumb
 

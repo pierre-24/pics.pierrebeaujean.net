@@ -13,6 +13,9 @@ from gallery_generator.models import Category, tag_picture_at, Picture, Tag, Pag
 from gallery_generator.views import TagView, PageView, IndexView
 
 
+l_logger = logger.getChild('scripts.update')
+
+
 class CommandUpdate:
     def __init__(self):
         self.thumb_types = {}
@@ -42,7 +45,7 @@ class CommandUpdate:
 
         # fetch pages
         for path in (root / CONFIG_DIR_NAME / PAGE_DIR_NAME).glob('*.md'):
-            logger.info('FETCH {}'.format(path))
+            l_logger.info('FETCH {}'.format(path))
             page = Page.create_from_file(path)
             self.pages_dic[page.slug] = page
 
@@ -89,7 +92,7 @@ class CommandUpdate:
                 path_category.mkdir()
 
             for tag in self.tags_per_cat_dic[category.slug]:
-                logger.info('GENERATE {}'.format(tag.get_url()))
+                l_logger.info('GENERATE {}'.format(tag.get_url()))
 
                 # get pictures (in correct order)
                 pictures = session.scalars(
@@ -106,17 +109,20 @@ class CommandUpdate:
 
         # generate pages
         for page in self.pages_dic.values():
-            logger.info('GENERATE {}'.format(page.get_url()))
+            l_logger.info('GENERATE {}'.format(page.get_url()))
             view = PageView(page, self.common_context)
             view.render(target)
 
         # generate index
-        logger.info('GENERATE index.html')
+        l_logger.info('GENERATE index.html')
         view = IndexView(self.thumbnails_dic, self.common_context)
         view.render(target)
 
     def __call__(self, root: pathlib.Path, settings: dict, db: GalleryDatabase, target: pathlib.Path):
+        l_logger.info('* Update phase *')
+
         for key, conf in settings['update_phase']['thumbnails'].items():
+            l_logger.info('REGISTER thumbnail format {}'.format(key))
             conf = conf.copy()
             transformer_type = conf.pop('type')
             self.thumb_types[key] = TRANSFORMER_TYPES[transformer_type](**conf)

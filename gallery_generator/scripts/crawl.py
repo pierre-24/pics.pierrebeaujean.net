@@ -7,6 +7,9 @@ from gallery_generator.controllers.pictures import create_picture_object, seek_p
 from gallery_generator.controllers.tags import TagManager
 
 
+l_logger = logger.getChild('scripts.crawl')
+
+
 def command_crawl(root: pathlib.Path, settings: dict, db: GalleryDatabase):
     """Go through all accessible pictures in the root directory, then for each of them
 
@@ -18,7 +21,7 @@ def command_crawl(root: pathlib.Path, settings: dict, db: GalleryDatabase):
     if not db.exists():
         raise FileNotFoundError('Database file `{}` does not exists'.format(db.path))
 
-    logger.info('* Crawling phase *')
+    l_logger.info('* Crawling phase *')
 
     with db.make_session() as session:
         tag_manager = TagManager(root, session)
@@ -33,15 +36,15 @@ def command_crawl(root: pathlib.Path, settings: dict, db: GalleryDatabase):
         ):
 
             path_str = str(path)
-            logger.info('FOUND {}'.format(path))
+            l_logger.info('FOUND {}'.format(path))
 
             if path_str not in existing_pictures:
-                logger.info('NEW PICTURE {}'.format(path))
+                l_logger.info('NEW PICTURE {}'.format(path))
 
                 picture = create_picture_object(root, path)
                 tag_manager.tag_picture(picture)
 
-                logger.info('[{}]'.format(', '.join(t.name for t in picture.tags)))
+                l_logger.info('[{}]'.format(', '.join(t.name for t in picture.tags)))
 
                 session.add(picture)
                 session.commit()
