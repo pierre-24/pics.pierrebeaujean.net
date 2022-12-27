@@ -16,3 +16,8 @@ def create_config_dirs(root: pathlib.Path) -> None:
         path = root / dir
         if not path.exists():
             path.mkdir()
+
+    # create settings.yml
+    settings_path = root / CONFIG_DIR_NAME / 'settings.yml'
+    if not settings_path.exists():
+        settings_path.touch()
