@@ -7,11 +7,11 @@
 
     {{ tag.to_html()|safe }}
 
-    <div class="grid">
+    <div class="grid" id="lightgallery">
     <div class="grid-sizer col-sm-12 col-md-6 col-lg-4 col-xl-3"></div>
 
     {% for picture in pictures %}
-        <div class="grid-item col-sm-12 col-md-6 col-lg-4 col-xl-3">
+        <div class="grid-item col-sm-12 col-md-6 col-lg-4 col-xl-3" data-src="/{{ thumbnailer.get_thumbnail(picture, 'gallery_large').path }}" data-tweet-text="{{ tag.display_name }}">
         <div class="grid-item-content">
             <img src="/{{ thumbnailer.get_thumbnail(picture, 'gallery_small').path }}" />
         </div>
@@ -21,6 +21,8 @@
 {% endblock %}
 
 {% block scripts %}
+
+    <!-- Masonry -->
     <script src="https://unpkg.com/masonry-layout@{{ masonry_version }}/dist/masonry.pkgd.min.js"></script>
     <script src="https://unpkg.com/imagesloaded@{{ imageloaded_version }}/imagesloaded.pkgd.min.js"></script>
     <script>
@@ -32,8 +34,27 @@
             percentPosition: true
         });
 
-        imageLoaded($grid).on('progress', () => {
+        imagesLoaded($grid).on('progress', () => {
             masonry.layout();
         })
     </script>
+
+    <!-- Lightgallery -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lightgallery/{{ lightgallery_version }}/lightgallery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lightgallery/{{ lightgallery_version }}/plugins/share/lg-share.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lightgallery/{{ lightgallery_version }}/plugins/hash/lg-hash.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lightgallery/{{ lightgallery_version }}/plugins/autoplay/lg-autoplay.min.js"></script>
+
+      <script type="text/javascript">
+        lightGallery(document.getElementById('lightgallery'), {
+            plugins: [lgShare, lgHash, lgAutoplay],
+            'selector': '.grid-item'
+        });
+    </script>
+{% endblock %}
+
+{% block style %}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/lightgallery/{{ lightgallery_version }}/css/lightgallery.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/lightgallery/{{ lightgallery_version }}/css/lg-share.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/lightgallery/{{ lightgallery_version }}/css/lg-autoplay.min.css" />
 {% endblock %}
