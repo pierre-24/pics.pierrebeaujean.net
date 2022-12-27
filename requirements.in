@@ -1,0 +1,4 @@
+-e file:.#egg=gallery-generator
+flake8
+flake8-quotes
+autopep8

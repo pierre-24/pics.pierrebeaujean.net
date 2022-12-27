@@ -1,0 +1,24 @@
+{% extends "base.ext.html" %}
+{% block page_title %}Index{% endblock %}
+
+{% block page_content %}
+    <h1>Welcome to {{ site_name }}!</h1>
+
+    {% for category_slug in index_categories_to_show %}
+        <div class="category">
+        <h2>{{ categories[category_slug].name }}</h2>
+        <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4">
+        {% for tag in tags_per_cat[category_slug] %}
+            <div class="col">
+                <div class="pic-card">
+                <a href="{{ tag.get_url() }}">
+                <img src="/{{ thumbnailer.get_thumbnail(thumbnails[tag.slug], 'tag_thumbnail').path }}" />
+                <h5>{{ tag.display_name }}</h5>
+                </a>
+                </div>
+            </div>
+        {% endfor %}
+        </div>
+        </div>
+    {% endfor %}
+{% endblock %}

@@ -1,0 +1,68 @@
+{% extends "base.ext.html" %}
+
+{% block page_title %}{{ tag.category.name }} &bullet; {{ tag.display_name }}{% endblock %}
+
+{% block social_media_cards %}
+    {{ make_social_media_cards(view.get_url(), tag.display_name, tag.description.strip(), thumbnailer.get_thumbnail(pictures[-1], 'twitter_card').path) }}
+{% endblock %}
+
+{% block page_content %}
+    <h1>{{ tag.display_name }}</h1>
+
+    {{ tag.to_html()|safe }}
+
+    <div class="grid" id="lightgallery">
+    <div class="grid-sizer col-sm-12 col-md-6 col-lg-4 col-xl-3"></div>
+
+    {% for picture in pictures %}
+        <div class="grid-item col-sm-12 col-md-6 col-lg-4 col-xl-3"
+             data-sub-html="{{ picture.exif_model }} @ {{ picture.exif_focal_length }}mm, ISO {{ picture.exif_iso_speed }}, {% if picture.exif_exposure_time < 1 %}1/{{ (1/picture.exif_exposure_time)|int }}{% else %}{{ picture.exif_exposure_time }}{% endif %}s, f/{{ picture.exif_f_number }}"
+             data-src="/{{ thumbnailer.get_thumbnail(picture, 'gallery_large').path }}"
+             data-tweet-text="A picture from {{ tag.display_name }} on {{ site_name }}"
+        >
+        <div class="grid-item-content">
+            <img src="/{{ thumbnailer.get_thumbnail(picture, 'gallery_small').path }}" />
+        </div>
+        </div>
+    {% endfor %}
+    </div>
+{% endblock %}
+
+{% block scripts %}
+
+    <!-- Masonry -->
+    <script src="https://unpkg.com/masonry-layout@{{ masonry_version }}/dist/masonry.pkgd.min.js"></script>
+    <script src="https://unpkg.com/imagesloaded@{{ imageloaded_version }}/imagesloaded.pkgd.min.js"></script>
+    <script>
+        let $grid = document.querySelector('.grid');
+
+        let masonry = new Masonry($grid, {
+            itemSelector: '.grid-item',
+            columnWidth: '.grid-sizer',
+            percentPosition: true
+        });
+
+        imagesLoaded($grid).on('progress', () => {
+            masonry.layout();
+        })
+    </script>
+
+    <!-- Lightgallery -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lightgallery/{{ lightgallery_version }}/lightgallery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lightgallery/{{ lightgallery_version }}/plugins/share/lg-share.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lightgallery/{{ lightgallery_version }}/plugins/hash/lg-hash.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lightgallery/{{ lightgallery_version }}/plugins/autoplay/lg-autoplay.min.js"></script>
+
+      <script type="text/javascript">
+        lightGallery(document.getElementById('lightgallery'), {
+            plugins: [lgShare, lgHash, lgAutoplay],
+            'selector': '.grid-item'
+        });
+    </script>
+{% endblock %}
+
+{% block style %}
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/lightgallery/{{ lightgallery_version }}/css/lightgallery.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/lightgallery/{{ lightgallery_version }}/css/lg-share.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/lightgallery/{{ lightgallery_version }}/css/lg-autoplay.min.css" />
+{% endblock %}

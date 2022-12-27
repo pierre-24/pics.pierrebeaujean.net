@@ -3,24 +3,29 @@ import pathlib
 import tempfile
 import shutil
 
+from gallery_generator.controllers.database import GalleryDatabase
+from gallery_generator.scripts.init import command_init
 
-class MosgalTestCase(unittest.TestCase):
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+class GCTestCase(unittest.TestCase):
 
+    def setUp(self) -> None:
         self.tests_files_directory = pathlib.Path(pathlib.Path(__file__).parent, 'tests_files')
-        self.temporary_directory = pathlib.Path(tempfile.mkdtemp())
+
+        self.root = pathlib.Path(tempfile.mkdtemp())
+        self.db = GalleryDatabase(self.root)
+
+        # create schema and directories
+        command_init(self.root, self.db)
 
     def tearDown(self):
-        shutil.rmtree(self.temporary_directory)
+        shutil.rmtree(self.root)
 
-    def copy_to_temporary_directory(self, file_in_test_dir: str, new_name: str = ''):
+    def copy_to_temporary_directory(self, file_in_test_dir: str, new_name: str = '') -> pathlib.Path:
         """Copy the content of a file from the ``test_file_directory`` to the temporary directory
 
         :param file_in_test_dir: path to the file to copy
         :param new_name: the new name of the file in the temporary directory (if blank, the one from path is used)
-        :rtype: str
         """
 
         path_in_test = pathlib.Path(self.tests_files_directory, file_in_test_dir)
@@ -31,7 +36,7 @@ class MosgalTestCase(unittest.TestCase):
         if not new_name:
             new_name = path_in_test.name
 
-        path_in_temp = pathlib.Path(self.temporary_directory, new_name)
+        path_in_temp = pathlib.Path(self.root, new_name)
 
         if path_in_temp.exists():
             raise FileExistsError(path_in_temp)

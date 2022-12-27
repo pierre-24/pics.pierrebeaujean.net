@@ -1,0 +1,67 @@
+h1 {
+  font-size:  2em;
+}
+
+h2 {
+  font-size: 1.5em;
+  color: #333;
+}
+
+.category {
+  margin-bottom: 1em;
+
+  .pic-card {
+    position: relative;
+    margin: .25em;
+    padding: 0;
+
+    img {
+      max-width: 100%;
+      margin: 0;
+    }
+
+    h5 {
+      position: absolute;
+      bottom: 0;
+      padding: 1rem;
+      margin: 0;
+      width: 100%;
+      color: #ccc;
+      font-size: 1rem;
+      font-weight: bold;
+      text-align: center;
+      background-color: rgba(0,0,0,0.5)
+    }
+
+    &:hover h5 {
+      color: white;
+      bottom: unset;
+      top: 50%;
+      transform: translateY(-50%);
+      height: 100%;
+      padding-top: 33%;
+    }
+  }
+}
+
+.grid {
+  .grid-item-content {
+    padding: .5em;
+    img {
+      max-width: 100%;
+    }
+  }
+}
+
+footer {
+  padding: 1em;
+  margin-bottom: 0;
+  margin-top: 1em;
+  border-top: 1px solid #eee;
+
+  .container {
+      font-size: 80%;
+      color: #555;
+      text-align: center;
+  }
+}
