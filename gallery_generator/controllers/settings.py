@@ -23,7 +23,7 @@ SETTINGS_BASE = {
                 'width': 300,
                 'height': 225
             },
-            'twitter_card': {
+            'social_media_card': {
                 'type': 'ScaleAndCrop',
                 'width': 600,
                 'height': 300

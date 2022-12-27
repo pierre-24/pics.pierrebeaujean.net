@@ -3,7 +3,7 @@
 {% block page_title %}{{ tag.category.name }} &bullet; {{ tag.display_name }}{% endblock %}
 
 {% block social_media_cards %}
-    {{ make_social_media_cards(view.get_url(), tag.display_name, tag.description.strip(), thumbnailer.get_thumbnail(pictures[-1], 'twitter_card').path) }}
+    {{ make_social_media_cards(view.get_url(), tag.display_name, tag.description.strip(), thumbnailer.get_thumbnail(pictures[-1], 'social_media_card').path) }}
 {% endblock %}
 
 {% block page_content %}
