@@ -145,9 +145,10 @@ def tag_date(manager: TagManager, picture: Picture, fmt: str = '%B %Y'):
 
 
 FOCAL_CLASSES = {
-    'Large': (0, 40),
-    'Normal': (40, 100),
-    'Zoom': (100, 5000)
+    'Ultra wide angle': (0, 16),
+    'Wide angle': (16, 24),
+    'Standard angle': (24, 55),
+    'Telephoto': (55, 5000)
 }
 
 
