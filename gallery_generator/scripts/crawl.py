@@ -36,7 +36,7 @@ def command_crawl(root: pathlib.Path, settings: dict, db: GalleryDatabase):
         ):
 
             path_str = str(path)
-            l_logger.info('FOUND {}'.format(path))
+            l_logger.debug('FOUND {}'.format(path))
 
             if path_str not in existing_pictures:
                 l_logger.info('NEW PICTURE {}'.format(path))
