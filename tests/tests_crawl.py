@@ -128,7 +128,7 @@ class TagManagerTestCase(GCTestCase, DispatchPictureFixture):
 
             self.assertEqual(c_album.tags[0].name, self.dir)
             self.assertEqual(c_date.tags[0].name, 'September 2020')
-            self.assertEqual(c_focal.tags[0].name, 'Large')
+            self.assertEqual(c_focal.tags[0].name, 'Standard angle')
 
             # corresponding files are also created
             for c in categories:
