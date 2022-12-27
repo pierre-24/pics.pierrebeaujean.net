@@ -2,16 +2,23 @@
 {% block page_title %}Index{% endblock %}
 
 {% block page_content %}
-    <h1>Index</h1>
+    <h1>Welcome to {{ site_name }}!</h1>
+
     {% for category_slug in index_categories_to_show %}
+        <div class="category">
         <h2>{{ categories[category_slug].name }}</h2>
-        <ul>
+        <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4">
         {% for tag in tags_per_cat[category_slug] %}
-            <li><a href="{{ tag.get_url() }}">
+            <div class="col">
+                <div class="pic-card">
+                <a href="{{ tag.get_url() }}">
                 <img src="/{{ thumbnailer.get_thumbnail(thumbnails[tag.slug], 'tag_thumbnail').path }}" />
-                {{ tag.display_name }}
-            </a></li>
+                <h5>{{ tag.display_name }}</h5>
+                </a>
+                </div>
+            </div>
         {% endfor %}
-        </ul>
+        </div>
+        </div>
     {% endfor %}
 {% endblock %}

@@ -1,6 +1,8 @@
 import pathlib
 from typing import List
 from jinja2 import Environment, FileSystemLoader, select_autoescape
+import sass
+from markdown import markdown
 
 from gallery_generator.models import Tag, Picture, Page
 
@@ -81,3 +83,25 @@ class IndexView(TemplateView):
         ctx['thumbnails'] = self.thumbnails
 
         return ctx
+
+
+class StyleView(TemplateView):
+    template_name = 'style.scss'
+
+    def __init__(self, common_context: dict):
+        super().__init__(common_context)
+
+    def get_url(self) -> str:
+        return 'style.css'
+
+    def render(self, target: pathlib.Path, **kwargs):
+        with pathlib.Path(target / self.get_url()).open('w') as f:
+            template = env.get_template(self.template_name)
+            f.write(sass.compile(string=template.render(**self.get_context_data(**kwargs)), output_style='compressed'))
+
+
+def markdown_filter(value: str) -> str:
+    return markdown(value)
+
+
+env.filters['markdown'] = markdown_filter

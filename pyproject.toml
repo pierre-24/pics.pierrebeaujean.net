@@ -26,7 +26,8 @@ dependencies = [
     'Jinja2',
     'markdown',
     'pyyaml',
-    'schema'
+    'schema',
+    'libsass'
 ]
 
 [project.scripts]
@@ -39,4 +40,4 @@ packages = ['gallery_generator', 'gallery_generator.controllers', 'gallery_gener
 version = {attr = "gallery_generator.__version__"}
 
 [tool.setuptools.package-data]
-gallery_generator = ["templates/*.html"]  # add templates
+gallery_generator = ["templates/*.html", "templates/*.scss"]  # add templates

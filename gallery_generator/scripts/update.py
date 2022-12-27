@@ -10,8 +10,7 @@ from gallery_generator.controllers.database import GalleryDatabase
 from gallery_generator.controllers.tags import TagManager
 from gallery_generator.controllers.thumbnails import TRANSFORMER_TYPES, Thumbnailer
 from gallery_generator.models import Category, tag_picture_at, Picture, Tag, Page, Thumbnail
-from gallery_generator.views import TagView, PageView, IndexView
-
+from gallery_generator.views import TagView, PageView, IndexView, StyleView
 
 l_logger = logger.getChild('scripts.update')
 
@@ -82,6 +81,11 @@ class CommandUpdate:
         path_thumbnail = target / self.thumbnailer.THUMBNAIL_DIRECTORY
         if not path_thumbnail.exists():
             path_thumbnail.mkdir()
+
+        # render style
+        l_logger.info('GENERATE style.css')
+        view = StyleView(self.common_context)
+        view.render(target)
 
         # renders categories and tags
         for category in self.categories_dic.values():

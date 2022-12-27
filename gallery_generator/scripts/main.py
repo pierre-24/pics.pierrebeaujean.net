@@ -36,7 +36,8 @@ def main():
     if path_settings.exists():
         with path_settings.open() as f:
             new_settings = yaml.load(f, Loader=yaml.Loader)
-            settings = SETTINGS_VALIDATION_SCHEMA.validate(merge_settings([settings, new_settings]))
+            if new_settings:
+                settings = SETTINGS_VALIDATION_SCHEMA.validate(merge_settings([settings, new_settings]))
 
     # database
     db = GalleryDatabase(args.source)

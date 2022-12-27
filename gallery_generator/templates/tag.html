@@ -7,7 +7,33 @@
 
     {{ tag.to_html()|safe }}
 
+    <div class="grid">
+    <div class="grid-sizer col-sm-12 col-md-6 col-lg-4 col-xl-3"></div>
+
     {% for picture in pictures %}
-        <img src="/{{ thumbnailer.get_thumbnail(picture, 'gallery_small').path }}" />
+        <div class="grid-item col-sm-12 col-md-6 col-lg-4 col-xl-3">
+        <div class="grid-item-content">
+            <img src="/{{ thumbnailer.get_thumbnail(picture, 'gallery_small').path }}" />
+        </div>
+        </div>
     {% endfor %}
+    </div>
+{% endblock %}
+
+{% block scripts %}
+    <script src="https://unpkg.com/masonry-layout@{{ masonry_version }}/dist/masonry.pkgd.min.js"></script>
+    <script src="https://unpkg.com/imagesloaded@{{ imageloaded_version }}/imagesloaded.pkgd.min.js"></script>
+    <script>
+        let $grid = document.querySelector('.grid');
+
+        let masonry = new Masonry($grid, {
+            itemSelector: '.grid-item',
+            columnWidth: '.grid-sizer',
+            percentPosition: true
+        });
+
+        imageLoaded($grid).on('progress', () => {
+            masonry.layout();
+        })
+    </script>
 {% endblock %}
