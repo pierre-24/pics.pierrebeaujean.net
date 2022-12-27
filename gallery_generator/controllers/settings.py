@@ -22,7 +22,12 @@ SETTINGS_BASE = {
                 'type': 'ScaleAndCrop',
                 'width': 300,
                 'height': 225
-            }
+            },
+            'twitter_card': {
+                'type': 'ScaleAndCrop',
+                'width': 600,
+                'height': 300
+            },
         },
         'page_context': {
             'site_name': 'Gallery test',
@@ -45,11 +50,13 @@ SETTINGS_VALIDATION_SCHEMA = Schema({
         'thumbnails': {str: {'type': str, 'width': int, Optional('height'): int}},
         'page_context': {
             'site_name': str,
+            Optional('domain'): str,
             'index_categories_to_show': [str],
             'bootstrap_version': str,
             'masonry_version': str,
             'imageloaded_version': str,
             'lightgallery_version': str,
+            Optional('twitter_account'): str,
             'footer_text': str
         }
     }
