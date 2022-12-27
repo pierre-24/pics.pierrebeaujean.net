@@ -15,7 +15,11 @@
     <div class="grid-sizer col-sm-12 col-md-6 col-lg-4 col-xl-3"></div>
 
     {% for picture in pictures %}
-        <div class="grid-item col-sm-12 col-md-6 col-lg-4 col-xl-3" data-src="/{{ thumbnailer.get_thumbnail(picture, 'gallery_large').path }}" data-tweet-text="A picture from {{ tag.display_name }} on {{ site_name }}">
+        <div class="grid-item col-sm-12 col-md-6 col-lg-4 col-xl-3"
+             data-sub-html="{{ picture.exif_model }} @ {{ picture.exif_focal_length }}mm, ISO {{ picture.exif_iso_speed }}, {% if picture.exif_exposure_time < 1 %}1/{{ (1/picture.exif_exposure_time)|int }}{% else %}{{ picture.exif_exposure_time }}{% endif %}s, f/{{ picture.exif_f_number }}"
+             data-src="/{{ thumbnailer.get_thumbnail(picture, 'gallery_large').path }}"
+             data-tweet-text="A picture from {{ tag.display_name }} on {{ site_name }}"
+        >
         <div class="grid-item-content">
             <img src="/{{ thumbnailer.get_thumbnail(picture, 'gallery_small').path }}" />
         </div>
