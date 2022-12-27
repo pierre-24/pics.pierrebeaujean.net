@@ -40,8 +40,6 @@ class BaseImageTransform:
         if not self._rotate:
             return im
 
-        self._rotate = False
-
         # get rotation tag, if any
         rot = im.getexif().get(BaseImageTransform.EXIF_ROT_TAG)
         rotate_angle = {3: 180, 6: 270, 8: 90}
