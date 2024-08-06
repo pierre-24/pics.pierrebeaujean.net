@@ -19,7 +19,7 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
 ]
 dependencies = [
-    'sqlalchemy',
+    'sqlalchemy<2',
     'Pillow',
     'exif',
     'python-slugify',
@@ -28,6 +28,13 @@ dependencies = [
     'pyyaml',
     'schema',
     'libsass'
+]
+
+[project.optional-dependencies]
+dev = [
+    "flake8",
+    "flake8-quotes",
+    "autopep8",
 ]
 
 [project.scripts]

@@ -8,11 +8,11 @@ help:
 	@echo "  help                        to get this help"
 	@echo "  lint                        to lint backend code (flake8)"
 
-init:
-	pip3 install -e .
+install:
+	pip3 install .
 
 install-dev:
-	pip-sync
+	pip3 install -e .[dev]
 
 lint:
 	flake8 gallery_generator tests --max-line-length=120 --ignore=N802
